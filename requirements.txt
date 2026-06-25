@@ -1,0 +1,4 @@
+numpy
+wfdb
+matplotlib
+pytest
