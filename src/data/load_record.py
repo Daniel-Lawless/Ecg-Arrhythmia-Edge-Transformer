@@ -7,8 +7,6 @@ from typing import Any
 logger = logging.getLogger(__name__)
 logger.setLevel("DEBUG")
 
-
-
 def load_record(
     record_name: str,
 ) -> tuple[np.ndarray, dict[str, Any], wfdb.Annotation]:
@@ -68,7 +66,6 @@ def load_record(
     logger.debug("First annotation symbols: %s", annotation.symbol[:10])
 
     return signals, fields, annotation
-
 
 def select_signal_channel(
     signals: np.ndarray,

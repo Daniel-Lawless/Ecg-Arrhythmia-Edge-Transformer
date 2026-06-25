@@ -49,10 +49,19 @@ def extract_beats(
         extracted_beats.append(beat)
         extracted_labels.append(symbol)
 
-    # Stacks the list of numpy arrays into a 2d matrix.
-    beats_matrix = np.vstack(extracted_beats)
-    
     # Converts the list of labels into a numpy array
     labels = np.array(extracted_labels)
+
+    if len(extracted_beats) == 0:
+        return (
+            # Empty numpy array with 0 rows and 240 columns. It will take values
+            # that has the same data type as signal.
+            np.empty((0, samples_before + samples_after), dtype=signal.dtype),
+            # Empty numpy array for labels
+            np.array([], dtype=str),
+        )
+
+    # Stacks the list of numpy arrays into a 2d matrix.
+    beats_matrix = np.vstack(extracted_beats)
 
     return beats_matrix, labels
