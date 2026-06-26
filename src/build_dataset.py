@@ -6,6 +6,7 @@ from typing import TypedDict
 from pathlib import Path
 from src.beat_extraction import extract_beats
 from src.load_record import load_record, select_signal_channel
+from src.label_mapping import map_labels_to_aami
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,9 @@ def build_dataset(
             annotation_samples=annotation.sample,
             annotation_symbols=annotation.symbol
         )
+
+        # Map each label to its AAMI map
+        labels = map_labels_to_aami(labels=labels)
 
         if beats_matrix.shape[0] == 0:
             logger.warning("No beats extracted for record %s", record_name)
