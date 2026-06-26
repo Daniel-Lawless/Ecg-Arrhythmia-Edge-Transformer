@@ -1,4 +1,4 @@
-from src.data.load_record import load_record
+from src.load_record import load_record
 import pytest
 
 # These are integration tests since they rely on

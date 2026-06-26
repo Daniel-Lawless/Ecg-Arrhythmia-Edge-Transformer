@@ -1,4 +1,4 @@
-from src.data.beat_extraction import extract_beats
+from src.beat_extraction import extract_beats
 import numpy as np
 
 def test_extracts_single_beat_window_correctly():

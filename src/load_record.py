@@ -5,7 +5,7 @@ import numpy as np
 from typing import Any
 
 logger = logging.getLogger(__name__)
-logger.setLevel("DEBUG")
+logger.setLevel("INFO")
 
 def load_record(
     record_name: str,
