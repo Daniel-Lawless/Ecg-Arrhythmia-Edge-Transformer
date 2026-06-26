@@ -166,7 +166,4 @@ def build_dataset(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    build_dataset()
-
-    # To exclude paced records later:
-    # build_dataset(excluded_records=PACED_RECORDS)
+    build_dataset(excluded_records=PACED_RECORDS)
