@@ -1,13 +1,22 @@
 import numpy as np
 import logging
 import json
+from typing import TypedDict
 
 from pathlib import Path
-from beat_extraction import extract_beats
-from load_record import load_record, select_signal_channel
+from src.beat_extraction import extract_beats
+from src.load_record import load_record, select_signal_channel
 
 logger = logging.getLogger(__name__)
 
+# Define RecordSegment type
+class RecordSegment(TypedDict):
+    record_id: str
+    patient_id: str
+    lead_name: str
+    start_index: int
+    end_index: int
+    num_beats: int
 # All 48 records in the MIT-BIH Arrhythmia Database.
 MITDB_RECORDS = [
     "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
@@ -36,9 +45,8 @@ def get_patient_id(record_name: str) -> str:
 def build_dataset(
     record_names: list[str] | None = None,
     output_dir: Path = Path("data/processed"),
-    preferred_lead: str = "MLII",
     excluded_records: set[str] | None = None,
-) -> tuple[np.ndarray, np.ndarray, list[dict[str, object]]]:
+) -> tuple[np.ndarray, np.ndarray, list[RecordSegment]]:
     """
     Build a beat-level ECG dataset from MIT-BIH records.
 
@@ -104,9 +112,9 @@ def build_dataset(
             "record_id": record_name,
             "patient_id": get_patient_id(record_name),
             "lead_name": lead_name,
-            "start_index": start_index,
-            "end_index": end_index,
-            "num_beats": number_of_beats 
+            "start_index": start_index,   # Start of this records matrix
+            "end_index": end_index,       # End of this records matrix
+            "num_beats": number_of_beats  # Number of windows in this record
         })
 
         # Append this records beats and labels.
