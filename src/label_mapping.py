@@ -29,6 +29,8 @@ AAMI_LABEL_MAP = {
 
     "Q": "Q",
     "?": "Q",
+    "/": "Q",
+    "f": "Q"
 }
 
 def map_labels_to_aami(labels: np.ndarray) -> np.ndarray:
