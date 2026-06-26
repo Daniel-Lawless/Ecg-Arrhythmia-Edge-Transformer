@@ -1,5 +1,5 @@
-from src.data.load_record import load_record, select_signal_channel
-from src.data.beat_extraction import extract_beats
+from src.load_record import load_record, select_signal_channel
+from src.beat_extraction import extract_beats
 import numpy as np
 import pytest
 

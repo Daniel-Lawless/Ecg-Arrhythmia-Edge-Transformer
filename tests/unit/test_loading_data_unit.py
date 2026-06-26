@@ -1,4 +1,4 @@
-from src.data.load_record import select_signal_channel
+from src.load_record import select_signal_channel
 import numpy as np
 
 # These are unit tests since they don't rely on externals.

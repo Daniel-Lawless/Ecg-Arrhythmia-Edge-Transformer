@@ -1,14 +1,7 @@
 import numpy as np
 
-# Extract beats and labels for a given signal.
-def extract_beats(
-    signal: np.ndarray,
-    annotation_samples: np.ndarray,
-    annotation_symbols: list[str],
-) -> tuple[np.ndarray, np.ndarray]:
-
-    # Recognised heartbeat annotations. This will exclude non heart beat annotations 
-    beat_symbols = {
+# Recognised heartbeat annotations. This will exclude non heart beat annotations 
+BEAT_SYMBOLS = {
     "N", "L", "R", "B",
     "A", "a", "J", "S",
     "V", "r", "F",
@@ -16,9 +9,19 @@ def extract_beats(
     "/", "f", "Q", "?"
     }
 
-    # This will give us a 240 sample window.
-    samples_before = 90
-    samples_after = 150
+# Start and end of the window.
+SAMPLES_BEFORE = 90
+SAMPLES_AFTER = 150
+
+# This will give us a 240 sample window.
+WINDOW_SIZE = SAMPLES_BEFORE + SAMPLES_AFTER
+
+# Extract beats and labels for a given signal.
+def extract_beats(
+    signal: np.ndarray,
+    annotation_samples: np.ndarray,
+    annotation_symbols: list[str],
+) -> tuple[np.ndarray, np.ndarray]:
 
     extracted_beats = []
     extracted_labels = []
@@ -31,12 +34,11 @@ def extract_beats(
         annotation_symbols
     ):
         # Ignore annotations that do not represent heartbeats
-        if symbol not in beat_symbols:
+        if symbol not in BEAT_SYMBOLS:
             continue
 
-        # Start and end of the window.
-        start = sample_index - samples_before
-        end = sample_index + samples_after
+        start = sample_index - SAMPLES_BEFORE
+        end = sample_index + SAMPLES_AFTER
 
         # Skip beats that cannot produce a complete 240-sample window
         if start < 0 or end > len(signal):
@@ -56,7 +58,7 @@ def extract_beats(
         return (
             # Empty numpy array with 0 rows and 240 columns. It will take values
             # that has the same data type as signal.
-            np.empty((0, samples_before + samples_after), dtype=signal.dtype),
+            np.empty((0, WINDOW_SIZE), dtype=signal.dtype),
             # Empty numpy array for labels
             np.array([], dtype=str),
         )
