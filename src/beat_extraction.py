@@ -2,12 +2,11 @@ import numpy as np
 
 # Recognised heartbeat annotations. This will exclude non heart beat annotations 
 BEAT_SYMBOLS = {
-    "N", "L", "R", "B",
-    "A", "a", "J", "S",
-    "V", "r", "F",
-    "e", "j", "n", "E",
-    "/", "f", "Q", "?"
-    }
+    "N", "L", "R", "e",
+    "j", "A", "a", "J", 
+    "S", "V", "E", "F",
+    "Q", "?", "/", "f",
+}
 
 # Start and end of the window.
 SAMPLES_BEFORE = 90

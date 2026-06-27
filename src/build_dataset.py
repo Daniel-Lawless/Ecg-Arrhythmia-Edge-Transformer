@@ -18,6 +18,7 @@ class RecordSegment(TypedDict):
     start_index: int
     end_index: int
     num_beats: int
+    
 # All 48 records in the MIT-BIH Arrhythmia Database.
 MITDB_RECORDS = [
     "100", "101", "102", "103", "104", "105", "106", "107", "108", "109",
@@ -47,7 +48,7 @@ def build_dataset(
     record_names: list[str] | None = None,
     output_dir: Path = Path("data/processed"),
     excluded_records: set[str] | None = None,
-) -> tuple[np.ndarray, np.ndarray, list[RecordSegment]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[RecordSegment]]:
     """
     Build a beat-level ECG dataset from MIT-BIH records.
 
@@ -66,6 +67,9 @@ def build_dataset(
     all_beats = []
     all_labels = []
     record_segments = []
+
+    # We can use these for patient-wise splitting later
+    all_patient_ids = []
 
     current_start_index = 0
 
@@ -111,10 +115,12 @@ def build_dataset(
         start_index = current_start_index
         end_index = start_index + number_of_beats
 
+        patient_id = get_patient_id(record_name)
+
         # Append metadata.
         record_segments.append({
             "record_id": record_name,
-            "patient_id": get_patient_id(record_name),
+            "patient_id": patient_id,
             "lead_name": lead_name,
             "start_index": start_index,   # Start of this records matrix
             "end_index": end_index,       # End of this records matrix
@@ -124,6 +130,7 @@ def build_dataset(
         # Append this records beats and labels.
         all_beats.append(beats_matrix)
         all_labels.append(labels)
+        all_patient_ids.extend([patient_id] * number_of_beats)
 
         current_start_index = end_index
 
@@ -145,27 +152,55 @@ def build_dataset(
     # all_labels = np.concat(labels) = ['V' 'N' 'Q' 'N' 'N' 'L']
     y_labels = np.concatenate(all_labels)
 
+    # Turns our patient_ids list into type np.ndarray
+    patient_ids = np.array(all_patient_ids)
+
+    if X_data.shape[0] != y_labels.shape[0] or y_labels.shape[0] != patient_ids.shape[0]:
+        raise ValueError(
+            f"Shape mismatch: X={X_data.shape[0]}, y={y_labels.shape[0]}, "
+            f"patient_ids={patient_ids.shape[0]}"
+        )
+
     # Make the directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Specify data paths
     X_path = output_dir / "X.npy"
     y_path = output_dir / "y.npy"
+    patient_id_path = output_dir / "patient_ids.npy"
     metadata_path = output_dir / "record_segments.json"
 
-    # Save X and y data
+    # Save X, y data, and patient_ids
     np.save(file=X_path, arr=X_data)
     np.save(file=y_path, arr=y_labels)
+    np.save(file=patient_id_path, arr=patient_ids)
 
     # Write each dictionary into metadata_path
     with metadata_path.open("w", encoding="utf8") as file:
         json.dump(record_segments, file, indent=4)
     
-    logger.info("Saved X.npy with shape %s", X_data.shape)
-    logger.info("Saved y.npy with shape %s", y_labels.shape)
-    logger.info("Saved record_segments.json with %s records", len(record_segments))
+    logger.info(
+        "Saved X.npy with shape %s to file %s",
+        X_data.shape,
+        X_path
+    )
+    logger.info(
+        "Saved y.npy with shape %s to file %s",
+        y_labels.shape,
+        y_path
+    )
+    logger.info(
+        "Saved patient IDs with shape %s to file %s",
+        patient_ids.shape,
+        patient_id_path
+    )
+    logger.info(
+        "Saved to file %s with %s records",
+        metadata_path,
+        len(record_segments)
+    )
 
-    return X_data, y_labels, record_segments
+    return X_data, y_labels, patient_ids, record_segments
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
