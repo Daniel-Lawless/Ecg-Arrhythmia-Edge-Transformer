@@ -60,8 +60,8 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
         fake_extract_beats
     )
 
-    # Extract data and metadata
-    X, y, record_segments = build_dataset_module.build_dataset(
+    # Extract data, patient_ids, and metadata
+    X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
         record_names=["100", "201", "202"],
         output_dir= Path(tmp_path),
     )
@@ -70,11 +70,21 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
     assert X.shape == (6, 240)
     # Each window had a corresponding label.
     assert y.shape == (6,)
+    # Each window also has a patient_id
+    assert patient_ids.shape == (6,)
+
+    # Patient_ids should be as follows
+    assert patient_ids.tolist() == [
+        "100", "100",
+        "201_202",
+        "201_202", "201_202", "201_202",
+    ]
 
     # Each file must be created
     assert (tmp_path / "X.npy").exists()
     assert (tmp_path / "y.npy").exists()
     assert (tmp_path / "record_segments.json").exists()
+    assert (tmp_path / "patient_ids.npy").exists()
 
     # Check the metadata loads correctly.
     assert record_segments == [
@@ -103,7 +113,6 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
             "num_beats": 3,
         },
     ]
-
 
 def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
 
@@ -138,7 +147,7 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     )
 
     # Build data and metadata.
-    X, y, record_segments = build_dataset_module.build_dataset(
+    X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
         record_names=["100", "102", "104"],
         output_dir=Path(tmp_path),
         excluded_records=build_dataset_module.PACED_RECORDS,
@@ -148,6 +157,8 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     # be the only one left.
     assert X.shape == (2, 240)
     assert y.shape == (2,)
+    assert patient_ids.shape == (2,)
+    assert patient_ids.tolist() == ["100", "100"]   
 
     # Only metadata from record 100 should exist.
     assert len(record_segments) == 1

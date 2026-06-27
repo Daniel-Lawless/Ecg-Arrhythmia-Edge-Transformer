@@ -7,42 +7,64 @@ import numpy as np
 
 def load_dataset(
         index_path: Path = Path("data/processed")
-    ) -> tuple[np.ndarray, np.ndarray, list]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list]:
 
     # Specify paths
     X_set_path = index_path / "X.npy"
     y_set_path = index_path / "y.npy"
+    patient_ids_path = index_path / "patient_ids.npy" 
     metadata_path = index_path / "record_segments.json"
 
     # Check if the files exist
     if not X_set_path.exists():
-        raise FileNotFoundError("No X data has been saved")
+        raise FileNotFoundError(
+            f"No file at {X_set_path}",
+            "No X data has been saved"
+        )
     
     if not y_set_path.exists():
-        raise FileNotFoundError("No y data has been saved")
-    
+        raise FileNotFoundError(
+            f"No file at {y_set_path}",
+            "No y data has been saved"
+        )
+    if not patient_ids_path.exists():
+        raise FileNotFoundError(
+            f"No file at {patient_ids_path}",
+            "No patient_ids have been saved"
+        )
     if not metadata_path.exists():
-        raise FileNotFoundError("No record metadata was found")
-
+        raise FileNotFoundError(
+            f"No file at {metadata_path}",
+            "No record metadata was found"
+        )
     # Load X and y data
     X = np.load(X_set_path)
     y = np.load(y_set_path)
+    patient_ids = np.load(patient_ids_path)
 
     # Load record metadata.
     with metadata_path.open("r", encoding="utf8") as file:
         record_metadata = json.load(file)
     
-    return X, y, record_metadata
+    return X, y, patient_ids, record_metadata
 
 def validate_dataset(
         X: np.ndarray,
         y: np.ndarray,
+        patient_ids: np.ndarray,
         record_metadata: list[dict[str, Any]]
 ) -> None:
     
     # Checks if each window has a corresponding label.
     if X.shape[0] != y.shape[0]:
-        raise ValueError(f"X and y counts row counts do not match. {X.shape[0]} != {y.shape[0]} ")
+        raise ValueError(
+            f"X and y counts row counts do not match. {X.shape[0]} != {y.shape[0]} ")
+    
+    if patient_ids.shape[0] != X.shape[0]:
+        raise ValueError(
+            "Each beat must have a patient_ids" 
+            f"Found {patient_ids.shape[0]} patient ids and {X.shape[0]} beats"
+        )
     
     # First records starting position
     expected_start_index = 0
@@ -53,16 +75,28 @@ def validate_dataset(
         # Grab its start/end index and the number of windows.
         start_index = record["start_index"]
         end_index = record["end_index"]
+        expected_patient_id = record["patient_id"]
         num_beats = record["num_beats"]
  
+        # Window must begin at either the start (for the first record) or
+        # at the end of the previous records window.
         if start_index != expected_start_index:
             raise ValueError(
                 f"Record {record['record_id']} starts at {start_index}, "
                 f"but expected {expected_start_index}"
             )
         
+        # Window must be as large as the end of the window - the start of the window 
         if end_index - start_index != num_beats:
-            raise ValueError(f"Record {record['record_id']} has inconsistent num_beats")
+            raise ValueError(
+                f"Record {record['record_id']} has inconsistent num_beats"
+            )
+        
+        # Each beat must have a patient_id
+        if not np.all(patient_ids[start_index: end_index] == expected_patient_id):
+            raise ValueError(
+                f"Each beat in record {record['record_id']} must have patient_id {record['patient_id']}"
+            )
         
         # Update expected_start_index to the start of the next records start.
         expected_start_index = end_index
@@ -73,9 +107,10 @@ def validate_dataset(
         )
 
 def print_dataset_summary(
-        X: np.ndarray,
-        y: np.ndarray,
-        record_metadata: list[dict[str, Any]]
+    X: np.ndarray,
+    y: np.ndarray,
+    patient_ids: np.ndarray,
+    record_metadata: list[dict[str, Any]],
 ) -> None:
     
     # Counts how often each annotation appears.
@@ -84,16 +119,20 @@ def print_dataset_summary(
     # Counts how often each lead appears
     lead_counts = Counter(record["lead_name"] for record in record_metadata)
 
-    # Collect a set of patient_ids
-    patient_ids = {record["patient_id"] for record in record_metadata}
+    # Counts many times each patient_id occurs
+    beat_patient_counts = Counter(patient_ids.tolist())
 
-    print("\nDataset Summary")
+    # Counts the number of patients
+    unique_patient_ids = set(patient_ids.tolist())
+
+    print("\nAAMI class distribution")
     print("=" * 50)
 
     print(f"X shape: {X.shape}")
     print(f"y shape: {y.shape}")
+    print(f"patient_ids shape: {patient_ids.shape}")
     print(f"Number of records: {len(record_metadata)}")
-    print(f"Number of patients: {len(patient_ids)}")
+    print(f"Number of patients: {len(unique_patient_ids)}")
     print(f"Window size: {X.shape[1]} samples")
 
     # Lead distribution
@@ -106,14 +145,22 @@ def print_dataset_summary(
     # Class distribution
     print("\nClass distribution")
     print("-" * 50)
+
     total_labels = len(y)
 
     for label, count in label_counts.most_common():
         percentage = (count / total_labels) * 100
         print(f"{label}: {count} beats ({percentage:.2f}%)")
 
+    print("\nBeats per patient")
+    print("-" * 50)
+
+    for patient_id, count in beat_patient_counts.most_common():
+        print(f"Patient {patient_id}: {count} beats")
+
     print("\nBeats per record")
     print("-" * 50)
+
     for segment in record_metadata:
         print(
             f"Record {segment['record_id']}: "
@@ -123,9 +170,9 @@ def print_dataset_summary(
         )
 
 def main() -> None:
-    X, y, record_segments = load_dataset()
-    validate_dataset(X, y, record_segments)
-    print_dataset_summary(X, y, record_segments)
+    X, y, patients_ids, record_segments = load_dataset()
+    validate_dataset(X, y, patients_ids, record_segments)
+    print_dataset_summary(X, y, patients_ids, record_segments)
 
 
 if __name__ == "__main__":
