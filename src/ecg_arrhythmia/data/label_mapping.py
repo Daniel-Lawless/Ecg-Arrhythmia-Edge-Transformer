@@ -10,6 +10,7 @@ import numpy as np
 # F: fusion beats
 # Q: unknown, paced, or unclassifiable beats
 
+# fmt: off
 AAMI_LABEL_MAP = {
     "N": "N",
     "L": "N",
@@ -32,6 +33,8 @@ AAMI_LABEL_MAP = {
     "/": "Q",
     "f": "Q"
 }
+# fmt: on
+
 
 def map_labels_to_aami(labels: np.ndarray) -> np.ndarray:
     """

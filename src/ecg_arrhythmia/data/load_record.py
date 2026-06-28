@@ -1,11 +1,13 @@
-import wfdb
-import matplotlib.pyplot as plt
 import logging
-import numpy as np
 from typing import Any
+
+import matplotlib.pyplot as plt
+import numpy as np
+import wfdb
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
+
 
 def load_record(
     record_name: str,
@@ -44,18 +46,14 @@ def load_record(
     if signals is None:
         raise ValueError("No signal found")
 
-    # MIT-BIH should return two-dimensional signal data. 
+    # MIT-BIH should return two-dimensional signal data.
     if signals.ndim != 2:
-        raise ValueError(
-            f"Expected a 2D signal array, received shape {signals.shape}"
-        )
+        raise ValueError(f"Expected a 2D signal array, received shape {signals.shape}")
 
     # Annotation.symbol is allowed to be None by the WFDB Annotation class.
     # We need the symbols because they will become our labels later on.
     if annotation.symbol is None:
-        raise ValueError(
-            f"Record {record_name} contains no annotation symbols"
-        )
+        raise ValueError(f"Record {record_name} contains no annotation symbols")
 
     # Log useful information for checking that the record loaded correctly.
     logger.debug("Record: %s", record_name)
@@ -66,6 +64,7 @@ def load_record(
     logger.debug("First annotation symbols: %s", annotation.symbol[:10])
 
     return signals, fields, annotation
+
 
 def select_signal_channel(
     signals: np.ndarray,
@@ -108,12 +107,10 @@ def select_signal_channel(
 
     return signal, lead_name
 
+
 def plot_record(
-        record_name: str,
-        signal: np.ndarray,
-        annotation: wfdb.Annotation,
-        lead_name: str
-        ) -> None:
+    record_name: str, signal: np.ndarray, annotation: wfdb.Annotation, lead_name: str
+) -> None:
 
     # Plot the first 3000 amplitudes/ 3000/360 ≈ 8.3 seconds
     # of ECG recording for this record
@@ -123,17 +120,19 @@ def plot_record(
     if annotation.symbol is None:
         raise ValueError("No annotation for this sample.")
 
-    plt.figure(figsize=(12,4))
-    plt.plot(signal[start:end], label=f"ECG signal")
+    plt.figure(figsize=(12, 4))
+    plt.plot(signal[start:end], label="ECG signal")
 
     # Gives (sample_index, symbol at that index)
-    for sample, symbol in zip(annotation.sample, annotation.symbol):
+    for sample, symbol in zip(annotation.sample, annotation.symbol, strict=True):
         # The sample index has to be between the start and end index
         if start <= sample < end:
             # Draw a vertical red line at x position sample - start
             plt.axvline(sample - start, color="red", alpha=0.3)
             # Put symbol at x postion sample - start, and y position signal[sample].
-            plt.text(sample - start, float(signal[sample]), symbol, color="green", fontsize=8)
+            plt.text(
+                sample - start, float(signal[sample]), symbol, color="green", fontsize=8
+            )
 
     plt.title(f"MIT-BIH Record {record_name}: {lead_name} Signal with Beat Annotations")
     plt.xlabel("Sample")

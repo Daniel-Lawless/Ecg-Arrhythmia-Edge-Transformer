@@ -1,12 +1,14 @@
 import numpy as np
 
-# Recognised heartbeat annotations. This will exclude non heart beat annotations 
+# Recognised heartbeat annotations. This will exclude non heart beat annotations
+# fmt: off
 BEAT_SYMBOLS = {
     "N", "L", "R", "e",
     "j", "A", "a", "J", 
     "S", "V", "E", "F",
     "Q", "?", "/", "f",
 }
+# fmt: on
 
 # Start and end of the window.
 SAMPLES_BEFORE = 90
@@ -14,6 +16,7 @@ SAMPLES_AFTER = 150
 
 # This will give us a 240 sample window.
 WINDOW_SIZE = SAMPLES_BEFORE + SAMPLES_AFTER
+
 
 # Extract beats and labels for a given signal.
 def extract_beats(
@@ -27,10 +30,9 @@ def extract_beats(
 
     # Creates a 240 sample window around each annotation index.
     # This will form each datapoint. The corresponding label for that
-    # window will be its y value.
+    # window will be its y value. stict=True means they must have the same length
     for sample_index, symbol in zip(
-        annotation_samples,
-        annotation_symbols
+        annotation_samples, annotation_symbols, strict=True
     ):
         # Ignore annotations that do not represent heartbeats
         if symbol not in BEAT_SYMBOLS:

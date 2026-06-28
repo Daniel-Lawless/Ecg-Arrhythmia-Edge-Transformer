@@ -1,5 +1,7 @@
-from src.load_record import load_record
 import pytest
+
+from ecg_arrhythmia.data.load_record import load_record
+
 
 # These are integration tests since they rely on
 # internet access and the PhysioNet server being available.
@@ -14,18 +16,19 @@ def test_loading_a_record():
     assert signals.ndim == 2
     assert signals.shape[1] == 2
 
-    # symbol and sample lists should not be None. 
+    # symbol and sample lists should not be None.
     # Each annotation sample should have a corresponding annotation symbol
-    # 
+    #
     assert annotation.symbol is not None
     assert annotation.sample is not None
     assert len(annotation.sample) == len(annotation.symbol)
 
     # for mitdb the sample frequency should be 360.
-    # sig_name should also be availble for us to extract the 
+    # sig_name should also be availble for us to extract the
     # measuring technique.
     assert fields["fs"] == 360
     assert "sig_name" in fields
+
 
 @pytest.mark.integration
 def test_invalid_record_name():
