@@ -1,4 +1,0 @@
-numpy
-wfdb
-matplotlib
-pytest

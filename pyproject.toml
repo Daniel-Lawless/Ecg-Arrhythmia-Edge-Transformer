@@ -1,0 +1,67 @@
+# Build configuration.
+# Uses setuptools to package/install the project from the src/ layout.
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+# Project metadata and runtime dependencies.
+# dependencies is similar in purpose to requirements.txt and is installed with:
+# pip install -e .
+[project]
+name = "ecg-arrhythmia"
+version = "0.1.0"
+description = "Edge ECG arrhythmia classification using MIT-BIH beat-level data"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "wfdb",
+    "matplotlib",
+    "scikit-learn",
+    "torch",
+]
+
+
+# Optional development dependencies.
+# Installed alongside the runtime dependencies with:
+# pip install -e ".[dev]"
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+
+# Package discovery.
+# Tells setuptools to find the ecg_arrhythmia package inside src/.
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+# Pytest configuration.
+# Equivalent to pytest.ini: tests live in tests/, and src/ is added to the import path.
+# This tells python where the tests live, and where to look for the code.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "integration: marks tests that exercise multiple modules or data-loading behaviour",
+]
+
+
+# Ruff formatting configuration.
+# Equivalent to ruff.toml or .ruff.toml.
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+
+# Ruff linting configuration.
+# E = Checks for code style violations based on PEP 8 guidelines
+# F = Pyflakes errors, e.g. unused imports or undefined names
+# I = import sorting
+# B = flake8-bugbear, catches likely bugs and bad patterns
+# UP = pyupgrade, suggests newer Python syntax
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = []

@@ -1,9 +1,11 @@
 import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
-from pathlib import Path
-from src.build_dataset import build_dataset
+from ecg_arrhythmia.data.build_dataset import build_dataset
+
 
 @pytest.mark.integration
 def test_build_dataset_with_real_mitdb_records(tmp_path):
@@ -13,7 +15,7 @@ def test_build_dataset_with_real_mitdb_records(tmp_path):
     )
 
     # Matrix should be 2d with more than 1 window
-    # with windows of length 240 
+    # with windows of length 240
     assert X.ndim == 2
     assert X.shape[1] == 240
     assert X.shape[0] > 0
@@ -60,7 +62,7 @@ def test_build_dataset_with_real_mitdb_records(tmp_path):
         # Window for a given record
         start = record["start_index"]
         end = record["end_index"]
-        # expected patient_id for each beat in this given record 
+        # expected patient_id for each beat in this given record
         expected_patient_id = record["patient_id"]
 
         # Check each beat in this window has this patient_id
@@ -81,7 +83,7 @@ def test_build_dataset_with_real_mitdb_records(tmp_path):
     with open(tmp_path / "record_segments.json", encoding="utf-8") as file:
         saved_segments = json.load(file)
 
-    # check the loaded files are equal to what we saved 
+    # check the loaded files are equal to what we saved
     assert np.array_equal(saved_X, X)
     assert np.array_equal(saved_y, y)
     assert np.array_equal(saved_patient_ids, patient_ids)

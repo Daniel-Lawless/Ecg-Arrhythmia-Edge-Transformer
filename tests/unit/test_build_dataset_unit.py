@@ -1,10 +1,14 @@
-import numpy as np
 from pathlib import Path
-from src import build_dataset as build_dataset_module
+
+import numpy as np
+
+import ecg_arrhythmia.data.build_dataset as build_dataset_module
+
 
 class FakeAnnotation:
     sample = np.array([100])
     symbol = ["N"]
+
 
 # record 201 and 202 should be converted to id "201_202",
 # any other remains the same.
@@ -42,28 +46,24 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
         labels = np.array(["N"] * number_of_beats)
         return beats, labels
 
-    # This makes it so when we do build_dataset_module.load_record, or any 
+    # This makes it so when we do build_dataset_module.load_record, or any
     # other method, it uses our fake equivalent.
     monkeypatch.setattr(
-        build_dataset_module, # The file to look in
-        "load_record",        # The function to look for
-        fake_load_record      # The function to replace it with
+        build_dataset_module,  # The file to look in
+        "load_record",  # The function to look for
+        fake_load_record,  # The function to replace it with
     )
     monkeypatch.setattr(
         build_dataset_module,
         "select_signal_channel",
         fake_select_signal_channel,
     )
-    monkeypatch.setattr(
-        build_dataset_module,
-        "extract_beats",
-        fake_extract_beats
-    )
+    monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
     # Extract data, patient_ids, and metadata
     X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
         record_names=["100", "201", "202"],
-        output_dir= Path(tmp_path),
+        output_dir=Path(tmp_path),
     )
 
     # Since the total number of windows was 6, each of length 240
@@ -75,9 +75,12 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
 
     # Patient_ids should be as follows
     assert patient_ids.tolist() == [
-        "100", "100",
+        "100",
+        "100",
         "201_202",
-        "201_202", "201_202", "201_202",
+        "201_202",
+        "201_202",
+        "201_202",
     ]
 
     # Each file must be created
@@ -114,6 +117,7 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
         },
     ]
 
+
 def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
 
     # Create fake methods
@@ -123,28 +127,24 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
         annotation = FakeAnnotation()
         return signals, fields, annotation
 
-    def fake_select_signal_channel(signals, fields, preferred_lead="MLII",):
+    def fake_select_signal_channel(
+        signals,
+        fields,
+        preferred_lead="MLII",
+    ):
         return np.array([2]), "MLII"
 
     def fake_extract_beats(signal, annotation_samples, annotation_symbols):
         return np.ones((2, 240)), np.array(["N", "N"])
 
     # Make is so these fake methods are called instead in build_dataset
-    monkeypatch.setattr(
-        build_dataset_module,
-        "load_record",
-        fake_load_record
-    )
+    monkeypatch.setattr(build_dataset_module, "load_record", fake_load_record)
     monkeypatch.setattr(
         build_dataset_module,
         "select_signal_channel",
         fake_select_signal_channel,
     )
-    monkeypatch.setattr(
-        build_dataset_module,
-        "extract_beats",
-        fake_extract_beats
-    )
+    monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
     # Build data and metadata.
     X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
@@ -158,7 +158,7 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     assert X.shape == (2, 240)
     assert y.shape == (2,)
     assert patient_ids.shape == (2,)
-    assert patient_ids.tolist() == ["100", "100"]   
+    assert patient_ids.tolist() == ["100", "100"]
 
     # Only metadata from record 100 should exist.
     assert len(record_segments) == 1

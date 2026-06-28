@@ -1,7 +1,9 @@
-from src.load_record import load_record, select_signal_channel
-from src.beat_extraction import extract_beats
 import numpy as np
 import pytest
+
+from ecg_arrhythmia.data.load_record import load_record, select_signal_channel
+from ecg_arrhythmia.preprocessing.beat_extraction import extract_beats
+
 
 @pytest.mark.integration
 def test_extract_beats_real_mitdb_record():
@@ -12,9 +14,7 @@ def test_extract_beats_real_mitdb_record():
 
     # Select a signal channel
     signal, _ = select_signal_channel(
-        signals=signals,
-        fields=fields,
-        preferred_lead="MLII"
+        signals=signals, fields=fields, preferred_lead="MLII"
     )
 
     if annotation.symbol is None:
@@ -24,16 +24,30 @@ def test_extract_beats_real_mitdb_record():
     beats_matrix, labels = extract_beats(
         signal=signal,
         annotation_samples=annotation.sample,
-        annotation_symbols=annotation.symbol
+        annotation_symbols=annotation.symbol,
     )
 
     # Valid beat annotations
     beat_symbols = {
-        "N", "L", "R", "B",
-        "A", "a", "J", "S",
-        "V", "r", "F",
-        "e", "j", "n", "E",
-        "/", "f", "Q", "?"
+        "N",
+        "L",
+        "R",
+        "B",
+        "A",
+        "a",
+        "J",
+        "S",
+        "V",
+        "r",
+        "F",
+        "e",
+        "j",
+        "n",
+        "E",
+        "/",
+        "f",
+        "Q",
+        "?",
     }
 
     # It should have returned some windows
@@ -51,4 +65,3 @@ def test_extract_beats_real_mitdb_record():
     # each label must be one of the allowed beat symbols
     for label in unique_labels:
         assert label in beat_symbols
-    

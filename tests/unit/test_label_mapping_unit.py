@@ -1,18 +1,22 @@
 import numpy as np
 import pytest
 
-from src.label_mapping import map_labels_to_aami
+from ecg_arrhythmia.data.label_mapping import map_labels_to_aami
 
 
 def test_maps_raw_labels_to_aami_classes():
     # Input
-    labels = np.array(["N", "L", "R", "A", "a", "J", "S", "V", "E", "F", "/", "f", "Q", "?"])
+    labels = np.array(
+        ["N", "L", "R", "A", "a", "J", "S", "V", "E", "F", "/", "f", "Q", "?"]
+    )
 
-    # Map the labels accoridng to the AAMI standard 
+    # Map the labels accoridng to the AAMI standard
     mapped_labels = map_labels_to_aami(labels)
 
     # what we expect to get
-    expected = np.array(["N", "N", "N", "S", "S", "S", "S", "V", "V", "F", "Q", "Q", "Q", "Q"])
+    expected = np.array(
+        ["N", "N", "N", "S", "S", "S", "S", "V", "V", "F", "Q", "Q", "Q", "Q"]
+    )
 
     assert np.array_equal(mapped_labels, expected)
 
