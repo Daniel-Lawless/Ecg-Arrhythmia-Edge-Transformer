@@ -1,8 +1,9 @@
-import wfdb
-import matplotlib.pyplot as plt
 import logging
-import numpy as np
 from typing import Any
+
+import matplotlib.pyplot as plt
+import numpy as np
+import wfdb
 
 logger = logging.getLogger(__name__)
 logger.setLevel("INFO")
@@ -120,10 +121,10 @@ def plot_record(
         raise ValueError("No annotation for this sample.")
 
     plt.figure(figsize=(12, 4))
-    plt.plot(signal[start:end], label=f"ECG signal")
+    plt.plot(signal[start:end], label="ECG signal")
 
     # Gives (sample_index, symbol at that index)
-    for sample, symbol in zip(annotation.sample, annotation.symbol):
+    for sample, symbol in zip(annotation.sample, annotation.symbol, strict=True):
         # The sample index has to be between the start and end index
         if start <= sample < end:
             # Draw a vertical red line at x position sample - start

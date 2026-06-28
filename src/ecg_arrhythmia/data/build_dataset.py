@@ -1,13 +1,13 @@
-import numpy as np
-import logging
 import json
-
-from typing import TypedDict
+import logging
 from pathlib import Path
+from typing import TypedDict
 
-from ecg_arrhythmia.preprocessing.beat_extraction import extract_beats
-from ecg_arrhythmia.data.load_record import load_record, select_signal_channel
+import numpy as np
+
 from ecg_arrhythmia.data.label_mapping import map_labels_to_aami
+from ecg_arrhythmia.data.load_record import load_record, select_signal_channel
+from ecg_arrhythmia.preprocessing.beat_extraction import extract_beats
 
 logger = logging.getLogger(__name__)
 

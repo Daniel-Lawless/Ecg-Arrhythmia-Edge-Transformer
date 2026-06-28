@@ -87,7 +87,8 @@ def validate_dataset(
         # Each beat must have a patient_id
         if not np.all(patient_ids[start_index:end_index] == expected_patient_id):
             raise ValueError(
-                f"Each beat in record {record['record_id']} must have patient_id {record['patient_id']}"
+                f"Each beat in record {record['record_id']}"
+                f"must have patient_id {record['patient_id']}"
             )
 
         # Update expected_start_index to the start of the next records start.
