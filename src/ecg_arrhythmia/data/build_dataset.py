@@ -189,12 +189,18 @@ def build_dataset(
     with metadata_path.open("w", encoding="utf8") as file:
         json.dump(record_segments, file, indent=4)
 
-    logger.info("Saved X.npy with shape %s to file %s", X_data.shape, X_path)
-    logger.info("Saved y.npy with shape %s to file %s", y_labels.shape, y_path)
+    logger.info(
+        "Saved X.npy with shape %s to file %s", X_data.shape, X_path
+    )
+    logger.info(
+        "Saved y.npy with shape %s to file %s", y_labels.shape, y_path
+    )
     logger.info(
         "Saved patient IDs with shape %s to file %s", patient_ids.shape, patient_id_path
     )
-    logger.info("Saved to file %s with %s records", metadata_path, len(record_segments))
+    logger.info(
+        "Saved to file %s with %s records", metadata_path, len(record_segments)
+    )
 
     return X_data, y_labels, patient_ids, record_segments
 
