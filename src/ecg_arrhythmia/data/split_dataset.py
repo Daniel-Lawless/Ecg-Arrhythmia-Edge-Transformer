@@ -221,7 +221,6 @@ def create_patient_splits(
     # to the starting dataset distribution. This is a form of Monte Carlo
     # sampling
     for trial in range(n_trials):
-
         # Lets us know at every 1000th count. It'll show
         # 0, 1000, 2000 etc.
         if trial % 1000 == 0:
@@ -344,7 +343,7 @@ def save_splits(
     train_ratio: float = 0.7,
     val_ratio: float = 0.15,
     test_ratio: float = 0.15,
-    n_trials: int = 50000
+    n_trials: int = 50000,
 ) -> None:
     """
     Save train/val/test arrays and the exact original row indices.
@@ -450,7 +449,7 @@ def split_processed_dataset(
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio,
-        n_trials=n_trials
+        n_trials=n_trials,
     )
 
     return splits

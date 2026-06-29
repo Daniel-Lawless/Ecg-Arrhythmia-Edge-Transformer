@@ -80,7 +80,7 @@ def build_dataset(
 
     if excluded_records is None:
         excluded_records = set()
-    
+
     all_beats = []
     all_labels = []
     record_segments = []
@@ -92,7 +92,6 @@ def build_dataset(
 
     # For each patient in the dataset
     for record_name in record_names:
-
         if record_name in excluded_records:
             logger.info("Skipping excluded record %s", record_name)
             continue
@@ -124,7 +123,7 @@ def build_dataset(
         # Optionally exclude mapped AAMI labels, i.e., Q due to low support.
         if excluded_labels:
             # Creates a mask. it will be True for excluded labels
-            # in labels and False otherwise. 
+            # in labels and False otherwise.
             excluded_mask = np.isin(labels, list(excluded_labels))
 
             # The tilde inverts every true to false and false to true.
