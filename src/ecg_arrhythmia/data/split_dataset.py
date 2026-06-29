@@ -220,7 +220,12 @@ def create_patient_splits(
     # balances our chosen split ratios and matching as close as possbile
     # to the starting dataset distribution. This is a form of Monte Carlo
     # sampling
-    for _ in range(n_trials):
+    for trial in range(n_trials):
+        # Lets us know at every 1000th count. It'll show
+        # 0, 1000, 2000 etc.
+        if trial % 1000 == 0:
+            logger.info("Trial: %d", trial)
+
         # Split the patient_ids into a train/val/test dict
         # The randomness comes from rng.permutation in this function.
         # This selects a new random split on each run,
@@ -250,6 +255,8 @@ def create_patient_splits(
             best_patient_split = patient_split
             # The indicies that gave this best split
             best_indices = split_indices
+
+    logger.info("Trial: %d", n_trials)
 
     if best_patient_split is None or best_indices is None:
         raise ValueError("Unable to split dataset")
@@ -331,12 +338,12 @@ def _split_summary(
 
 def save_splits(
     splits: DatasetSplits,
-    patient_ids: np.ndarray,
     output_dir: Path = Path("data/splits"),
     seed: int = 42,
     train_ratio: float = 0.7,
     val_ratio: float = 0.15,
     test_ratio: float = 0.15,
+    n_trials: int = 50000,
 ) -> None:
     """
     Save train/val/test arrays and the exact original row indices.
@@ -377,6 +384,7 @@ def save_splits(
     # Overall summary and summary of each train/val/test split
     summary = {
         "seed": seed,
+        "n_trials": n_trials,
         "ratios": {
             "train_ratio": train_ratio,
             "val_ratio": val_ratio,
@@ -404,7 +412,7 @@ def split_processed_dataset(
     val_ratio: float = 0.15,
     test_ratio: float = 0.15,
     seed: int = 42,
-    n_trials: int = 1000,
+    n_trials: int = 50000,
 ) -> DatasetSplits:
 
     logger.info("Loading saved data...")
@@ -436,12 +444,12 @@ def split_processed_dataset(
     # save the data to disk
     save_splits(
         splits=splits,
-        patient_ids=patient_ids,
         output_dir=output_dir,
         seed=seed,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio,
+        n_trials=n_trials,
     )
 
     return splits

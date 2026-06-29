@@ -37,6 +37,9 @@ MITDB_RECORDS = [
 # if I want to test a non-pace classifier.
 PACED_RECORDS = {"102", "104", "107", "217"}
 
+# Q has low support, so we can optionally exclude it
+EXCLUDED_AAMI_LABELS = {"Q"}
+
 
 def get_patient_id(record_name: str) -> str:
     """
@@ -54,6 +57,7 @@ def build_dataset(
     record_names: list[str] | None = None,
     output_dir: Path = Path("data/processed"),
     excluded_records: set[str] | None = None,
+    excluded_labels: set[str] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[RecordSegment]]:
     """
     Build a beat-level ECG dataset from MIT-BIH records.
@@ -62,10 +66,17 @@ def build_dataset(
     - X.npy: all extracted ECG beat windows
     - y.npy: all corresponding beat labels
     - record_segments.json: metadata showing which rows belong to each record
+
+    Optional exclusions:
+    - excluded_records removes entire MIT-BIH records.
+    - excluded_labels removes mapped AAMI labels, e.g. Q
     """
 
     if record_names is None:
         record_names = MITDB_RECORDS
+
+    if excluded_labels is None:
+        excluded_labels = set()
 
     if excluded_records is None:
         excluded_records = set()
@@ -108,6 +119,30 @@ def build_dataset(
 
         # Map each label to its AAMI map
         labels = map_labels_to_aami(labels=labels)
+
+        # Optionally exclude mapped AAMI labels, i.e., Q due to low support.
+        if excluded_labels:
+            # Creates a mask. it will be True for excluded labels
+            # in labels and False otherwise.
+            excluded_mask = np.isin(labels, list(excluded_labels))
+
+            # The tilde inverts every true to false and false to true.
+            # So it keeps every label that is NOT in excluded labels.
+            keep_mask = ~excluded_mask
+
+            # Counts the number that has been dropped.
+            num_dropped = int(np.sum(excluded_mask))
+            if num_dropped > 0:
+                logger.info(
+                    "Dropped %d beats from record %s with labels %s",
+                    num_dropped,
+                    record_name,
+                    sorted(excluded_labels),
+                )
+
+            # Keep only the labels and beats where keep_mask is True.
+            labels = labels[keep_mask]
+            beats_matrix = beats_matrix[keep_mask]
 
         if beats_matrix.shape[0] == 0:
             logger.warning("No beats extracted for record %s", record_name)
@@ -202,4 +237,7 @@ def build_dataset(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    build_dataset(excluded_records=PACED_RECORDS)
+    build_dataset(
+        excluded_records=PACED_RECORDS,
+        excluded_labels=EXCLUDED_AAMI_LABELS,
+    )
