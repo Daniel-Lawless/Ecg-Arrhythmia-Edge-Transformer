@@ -275,11 +275,11 @@ def create_patient_splits(
         "test": _build_split("test"),
     }
 
+
 def _class_summary(
-    y: np.ndarray,
-    all_labels: np.ndarray
+    y: np.ndarray, all_labels: np.ndarray
 ) -> dict[str, dict[str, int | float]]:
-    # Counts how many times each label appears 
+    # Counts how many times each label appears
     label_counts = Counter(y.tolist())
 
     if all_labels is None:
@@ -287,35 +287,26 @@ def _class_summary(
 
     # Gives a new dictionary that returns the count
     # of each label, and 0 if it is not there.
-    counts = {
-        label: int(label_counts.get(label, 0))
-        for label in all_labels
-    }
+    counts = {label: int(label_counts.get(label, 0)) for label in all_labels}
 
     # Get the proportion of each class label
     y_proportion_dict = {
-        label: np.round(count / len(y), 4)
-        for label, count in counts.items()
+        label: np.round(count / len(y), 4) for label, count in counts.items()
     }
 
     return {
         # Sort the labels by their count
-        "class_counts":  dict(
+        "class_counts": dict(
             sorted(
-            counts.items(),
-            key=lambda item: item[1],
-            reverse=True,
+                counts.items(),
+                key=lambda item: item[1],
+                reverse=True,
             )
         ),
-
         # Sort the labels by their proportions
         "class_proportions": dict(
-            sorted(
-                y_proportion_dict.items(),
-                key=lambda item: item[1],
-                reverse=True
-            )
-        )
+            sorted(y_proportion_dict.items(), key=lambda item: item[1], reverse=True)
+        ),
     }
 
 
@@ -324,7 +315,7 @@ def _split_summary(
     total_beats: int,
     all_labels: np.ndarray,
 ) -> dict[str, object]:
-    
+
     # Returns class counts and proportions
     class_summary = _class_summary(split["y"], all_labels)
 
@@ -376,7 +367,7 @@ def save_splits(
         test_indices=splits["test"]["indices"],
     )
 
-    # 
+    #
     all_y = np.concatenate([splits[name]["y"] for name in SPLIT_NAMES])
     all_labels = np.unique(all_y)
     total_beats = len(all_y)
@@ -394,11 +385,7 @@ def save_splits(
         "true_dataset_counts": dataset_class_summary["class_counts"],
         "true_dataset_distribution": dataset_class_summary["class_proportions"],
         "splits": {
-            split_name: _split_summary(
-                splits[split_name],
-                total_beats,
-                all_labels
-            )
+            split_name: _split_summary(splits[split_name], total_beats, all_labels)
             for split_name in SPLIT_NAMES
         },
     }
@@ -419,7 +406,7 @@ def split_processed_dataset(
     seed: int = 42,
     n_trials: int = 1000,
 ) -> DatasetSplits:
-    
+
     logger.info("Loading saved data...")
 
     # Load saved data

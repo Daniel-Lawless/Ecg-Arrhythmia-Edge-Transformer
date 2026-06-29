@@ -4,6 +4,7 @@ from typing import Any
 
 import numpy as np
 
+
 def load_dataset(
     index_path: Path = Path("data/processed"),
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list]:
