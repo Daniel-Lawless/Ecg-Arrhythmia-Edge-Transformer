@@ -308,7 +308,10 @@ def test_create_patient_splits_has_no_patient_leakage(small_splits):
 
 
 def test_create_patient_splits_uses_every_beat_once(small_dataset, small_splits):
-    """Every beat index should appear exactly once across train, validation, and test."""
+    """
+        Every beat index should appear exactly once across 
+        train, validation, and test.
+    """
     X, _, _ = small_dataset
 
     # Combines all indices across the splits

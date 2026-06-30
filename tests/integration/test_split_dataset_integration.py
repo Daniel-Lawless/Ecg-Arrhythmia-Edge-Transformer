@@ -1,5 +1,6 @@
-import pytest
 import numpy as np
+import pytest
+
 import ecg_arrhythmia.data.split_dataset as split_dataset_module
 
 # Configuration
@@ -46,7 +47,10 @@ def test_split_processed_dataset_loads_validates_splits_and_saves(
     tmp_path,
     small_dataset,
 ):
-    """The full split_processed_dataset pipeline should load, validate, split, save, and return splits."""
+    """
+        The full split_processed_dataset pipeline should load,
+        validate, split, save, and return splits.
+    """
     X, y, patient_ids = small_dataset
     record_metadata = [{"record_id": "fake_record"}]
 
