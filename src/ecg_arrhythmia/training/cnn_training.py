@@ -1,12 +1,12 @@
 import logging
-from typing import TypedDict
 from pathlib import Path
+from typing import TypedDict
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from ecg_arrhythmia.data.ecg_dataset import ECGDataset, LABEL_TO_INDEX
+from ecg_arrhythmia.data.ecg_dataset import LABEL_TO_INDEX, ECGDataset
 from ecg_arrhythmia.models.cnn_baseline import CNNBaseline
 
 logger = logging.getLogger(__name__)
@@ -14,10 +14,8 @@ logger = logging.getLogger(__name__)
 NUM_CLASSES = len(LABEL_TO_INDEX)
 
 # Allows us to convert index to label
-INDEX_TO_LABEL = {
-    value: key
-    for key, value in LABEL_TO_INDEX.items()
-}
+INDEX_TO_LABEL = {value: key for key, value in LABEL_TO_INDEX.items()}
+
 
 # Define return types
 class ClassMetrics(TypedDict):
@@ -25,6 +23,7 @@ class ClassMetrics(TypedDict):
     recall: float
     f1: float
     total_class_count: int
+
 
 class EvaluationMetrics(TypedDict):
     loss: float
@@ -47,6 +46,7 @@ def log_per_class_metrics(evaluation_metrics: EvaluationMetrics) -> None:
             class_metrics["f1"],
             class_metrics["total_class_count"],
         )
+
 
 def compute_class_weights(
     dataset: ECGDataset,
@@ -73,6 +73,7 @@ def compute_class_weights(
     # classes receive smaller loss weights.
 
     return class_weights.to(device)
+
 
 def train_one_epoch(
     model: nn.Module,
@@ -128,10 +129,7 @@ def train_one_epoch(
 
 
 def evaluate(
-    model: nn.Module,
-    val_loader: DataLoader,
-    criterion: nn.Module,
-    device: torch.device
+    model: nn.Module, val_loader: DataLoader, criterion: nn.Module, device: torch.device
 ) -> EvaluationMetrics:
 
     # Put model in evaluation mode.
@@ -145,7 +143,7 @@ def evaluate(
     correct_predictions = 0
 
     # Initalise prediction classification as a torch tensor
-    # with num_classes zeros. Each position stores the count 
+    # with num_classes zeros. Each position stores the count
     # for one class so true_positives[2] means true positives
     # count for V
     true_positives = torch.zeros(NUM_CLASSES, device=device)
@@ -190,33 +188,33 @@ def evaluate(
             # predictions == y_batch will give a tensor of booleans.
             # we sum the True values, and extract the value from the
             # tensor using item()
-            correct_predictions += (predictions == y_batch).sum().item() 
+            correct_predictions += (predictions == y_batch).sum().item()
 
-            # Update the TP, FN, and FP for this batch 
+            # Update the TP, FN, and FP for this batch
             for class_index in range(NUM_CLASSES):
-                # Boolean mask for samples the model predicted as this class for this batch
+                # Boolean mask for samples the model predicted as this class
                 predicted_class = predictions == class_index
 
-                # Boolean mask for samples whose true label is this class for this batch
+                # Boolean mask for samples whose true label is this class
                 true_class = y_batch == class_index
 
-                # True positives: predicted this class, and the true label was this class.
+                # TP: predicted this class, and the true label was this class.
                 true_positives[class_index] += (predicted_class & true_class).sum()
 
-                # False negatives: did not predict this class, but the true label was this class.
+                # FN: did not predict this class, but the true label was this class.
                 false_negatives[class_index] += (~predicted_class & true_class).sum()
 
-                # False positives: predicted this class, but the true label was not this class.
+                # FP: predicted this class, but the true label was not this class.
                 false_positives[class_index] += (predicted_class & ~true_class).sum()
 
                 # update class counts for this batch
                 total_class_counts[class_index] += true_class.sum()
-    
-    # Per-class precision = 
+
+    # Per-class precision =
     # correct predictions for this class / all predictions made as this class.
     precision = true_positives / (true_positives + false_positives + 1e-8)
 
-    # Per-class recall = 
+    # Per-class recall =
     # correct predictions for this class / all samples that truly belong to this class.
     recall = true_positives / (true_positives + false_negatives + 1e-8)
 
@@ -237,7 +235,7 @@ def evaluate(
             "precision": precision[class_index].item(),
             "recall": recall[class_index].item(),
             "f1": f1_scores[class_index].item(),
-            "total_class_count": int(total_class_counts[class_index].item())
+            "total_class_count": int(total_class_counts[class_index].item()),
         }
 
     # Return loss, accuracy, macro_f1, and metrics per class.
@@ -247,11 +245,12 @@ def evaluate(
         # takes the mean of the num_classes f1_values and
         # extracts it from the tensor
         "macro_f1": f1_scores.mean().item(),
-        "per_class": per_class
+        "per_class": per_class,
     }
 
-def main(num_epochs:int = 20) -> None:
-    
+
+def main(num_epochs: int = 20) -> None:
+
     # Create train and val sets
     train_set = ECGDataset(Path("data/splits/train"))
     val_set = ECGDataset(Path("data/splits/val"))
@@ -296,10 +295,10 @@ def main(num_epochs:int = 20) -> None:
         device,
         model,
         criterion,
-        optimiser
+        optimiser,
     )
 
-    # starting macro_f1 
+    # starting macro_f1
     best_macro_f1 = 0
 
     # Define where we want the final learned model weights
@@ -314,28 +313,27 @@ def main(num_epochs:int = 20) -> None:
     # Run num_epochs epochs
     logger.info("Intialising training for %s epochs...", num_epochs)
     for epoch in range(1, num_epochs + 1):
-
         # Update model weights and return train_loss
         train_loss = train_one_epoch(
             model=model,
             train_loader=train_loader,
             criterion=criterion,
             optimiser=optimiser,
-            device=device
+            device=device,
         )
 
         # Calculate val_loss
         val_metrics = evaluate(
-            model=model,
-            val_loader=val_loader,
-            criterion=criterion,
-            device=device
+            model=model, val_loader=val_loader, criterion=criterion, device=device
         )
 
         macro_f1 = val_metrics["macro_f1"]
 
         logger.info(
-            "epoch: %s | train loss: %.4f | val macro f1: %.4f | val acc: %.4f | val loss: %.4f",
+            """
+            epoch: %s| train loss: %.4f | val macro f1: %.4f |
+            val acc: %.4f | val loss: %.4f
+            """,
             epoch,
             train_loss,
             macro_f1,
@@ -353,9 +351,10 @@ def main(num_epochs:int = 20) -> None:
 
             # only log metrics when a new highest macro_f1 has been found
             log_per_class_metrics(val_metrics)
-    
+
     logger.info("best_macro_f1: %s", best_macro_f1)
     logger.info("saved best model weights to: %s", model_output_path)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level="INFO")

@@ -49,7 +49,7 @@ class CNNBaseline(nn.Module):
         # and it outputs logits for each class. These raw logits
         # can later be passed into softmax to calculate probabilites
         self.classifier = nn.Linear(in_features=64, out_features=num_classes)
-        # output shape (batch_size, num_classes). a prediction for each window 
+        # output shape (batch_size, num_classes). a prediction for each window
         # in batch_size
 
     # This defines the forward pass of data.
