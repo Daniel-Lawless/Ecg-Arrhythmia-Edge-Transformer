@@ -48,7 +48,9 @@ class CNNBaseline(nn.Module):
         # of shape linear_function = input @ weights.T + bias
         # and it outputs logits for each class. These raw logits
         # can later be passed into softmax to calculate probabilites
-        self.classifier = nn.Linear(64, num_classes)
+        self.classifier = nn.Linear(in_features=64, out_features=num_classes)
+        # output shape (batch_size, num_classes). a prediction for each window 
+        # in batch_size
 
     # This defines the forward pass of data.
     # Assume one batch of ECG windows comes in with shape: (32, 1, 240)
