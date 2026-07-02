@@ -10,7 +10,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from ecg_arrhythmia.data.ecg_dataset import LABEL_TO_INDEX, ECGDataset
-from ecg_arrhythmia.models.cnn_baseline import CNNBaseline
+from ecg_arrhythmia.models.cnn_baseline_v1 import CNNBaselineV1
+from ecg_arrhythmia.models.cnn_baseline_v2 import CNNBaselineV2
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +303,24 @@ def train_one_epoch(
     return total_loss / total_samples
 
 
+# Helps select model
+def build_model(
+    model_name: str,
+    num_classes: int,
+    dropout: float,
+) -> nn.Module:
+    if model_name == "cnn_baseline_v1":
+        return CNNBaselineV1(num_classes=num_classes)
+
+    if model_name == "cnn_baseline_v2":
+        return CNNBaselineV2(
+            num_classes=num_classes,
+            dropout=dropout,
+        )
+
+    raise ValueError(f"Unknown model name: {model_name}")
+
+
 # ---------------------------------------------------------------------
 #                             CLI Parser
 # ---------------------------------------------------------------------
@@ -316,11 +335,26 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--val-set-dir", type=Path, default=Path("data/splits/val"))
 
+    parser.add_argument(
+        "--learning-rate", type=float, default=0.001, help="Choose learning rate"
+    )
+
     parser.add_argument("--batch-size", type=int, default=64)
 
-    # CLI Tweak: Added epochs argument into argparse
     parser.add_argument(
         "--epochs", type=int, default=25, help="Number of epochs to train the model"
+    )
+
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        choices=["cnn_baseline_v1", "cnn_baseline_v2"],
+        default="cnn_baseline_v2",  # Defaults to better model
+        help="Which CNN model architecture to train.",
+    )
+
+    parser.add_argument(
+        "--dropout", type=float, default=0.3, help="Choose dropout probability"
     )
 
     return parser.parse_args()
@@ -368,7 +402,9 @@ def main() -> None:
 
     # Define model. Model and data must be on the same device.
     # moving the model to device means putting its weights on device
-    model = CNNBaseline(num_classes=4).to(device)
+    model = build_model(
+        model_name=args.model_name, num_classes=NUM_CLASSES, dropout=args.dropout
+    ).to(device)
 
     # Class weights to ensure minority classes are taken into
     # consideration
@@ -382,7 +418,7 @@ def main() -> None:
 
     # model.parameters() are all the learnable parameters in our model.
     # We give this to the optimiser so it knows what to update.
-    optimiser = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimiser = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     logger.info(
         "device: %s | model: %s | criterion: %s | optimiser: %s",
@@ -397,7 +433,7 @@ def main() -> None:
 
     # Define where we want the final learned model weights
     # to be stored and make the directory.
-    model_output_path = Path("artifacts/models/cnn_baseline_v1.pt")
+    model_output_path = Path(f"artifacts/models/{args.model_name}.pt")
     model_output_path.parent.mkdir(parents=True, exist_ok=True)
     # Note parent.mkdir creates the directory one level above the
     # final file name.

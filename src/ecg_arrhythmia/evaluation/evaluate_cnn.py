@@ -9,7 +9,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from ecg_arrhythmia.data.ecg_dataset import ECGDataset
-from ecg_arrhythmia.models.cnn_baseline import CNNBaseline
+from ecg_arrhythmia.models.cnn_baseline_v1 import CNNBaselineV1
+from ecg_arrhythmia.models.cnn_baseline_v2 import CNNBaselineV2
 from ecg_arrhythmia.training.cnn_training import (
     INDEX_TO_LABEL,
     NUM_CLASSES,
@@ -27,15 +28,35 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------
 
 
-def load_model(checkpoint_path: Path, device: torch.device) -> CNNBaseline:
-    # Make empty model skelton to load weights into
-    model = CNNBaseline(num_classes=NUM_CLASSES).to(device)
+def load_model(
+    checkpoint_path: Path,
+    model_name: str,
+    device: torch.device,
+) -> nn.Module:
 
-    # Load the weights learned from training
-    state_dict = torch.load(checkpoint_path, map_location=device)
+    if model_name == "cnn_baseline_v1":
+        # Make empty V1 model skelton to load weights into
+        model = CNNBaselineV1(num_classes=NUM_CLASSES).to(device)
 
-    # Load weights into model
-    model.load_state_dict(state_dict)
+        # Load the weights from the trained V1 model
+        state_dict = torch.load(checkpoint_path, map_location=device)
+
+        # Load weights into model
+        model.load_state_dict(state_dict)
+
+    elif model_name == "cnn_baseline_v2":
+        # We don't need to pass dropout since it will be turned
+        # off for inference anyway
+        model = CNNBaselineV2(num_classes=NUM_CLASSES).to(device)
+
+        # Load the weights from the trained V2 model
+        state_dict = torch.load(checkpoint_path, map_location=device)
+
+        # Load weights into model
+        model.load_state_dict(state_dict)
+
+    else:
+        raise ValueError(f"Cannot load model unknown model: {model_name}")
 
     return model
 
@@ -89,9 +110,10 @@ def parse_args() -> argparse.Namespace:
 
     # Add command line arguments
     parser.add_argument(
-        "--checkpoint-path",
-        type=Path,
-        default=Path("artifacts/models/cnn_baseline_v1.pt"),
+        "--model-name",
+        type=str,
+        choices=["cnn_baseline_v1", "cnn_baseline_v2"],
+        default="cnn_baseline_v2",
     )
     parser.add_argument(
         "--test-split-dir",
@@ -103,11 +125,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/splits/train"),
     )
-    parser.add_argument(
-        "--output-path",
-        type=Path,
-        default=Path("artifacts/results/cnn_baseline_v1_test_metrics.json"),
-    )
+
     parser.add_argument("--batch-size", type=int, default=64)
 
     return parser.parse_args()
@@ -144,8 +162,12 @@ def main() -> None:
         shuffle=False,
     )
 
+    checkpoint_path = Path("artifacts/models") / f"{args.model_name}.pt"
+
     # Load the model
-    model = load_model(args.checkpoint_path, device)
+    model = load_model(
+        checkpoint_path=checkpoint_path, model_name=args.model_name, device=device
+    )
 
     # Important note for future reference:
     # Use the same weighted loss setup as training, based on train class counts.
@@ -170,9 +192,12 @@ def main() -> None:
     log_per_class_metrics(metrics)
     log_confusion_matrix(metrics)
 
+    # Define output path
+    output_path = Path("artifacts/results") / f"{args.model_name}_test_metrics.json"
+
     # Save metrics
-    save_metrics(metrics, args.output_path)
-    logger.info("saved test metrics to: %s", args.output_path)
+    save_metrics(metrics, output_path)
+    logger.info("saved test metrics to: %s", output_path)
 
 
 if __name__ == "__main__":
