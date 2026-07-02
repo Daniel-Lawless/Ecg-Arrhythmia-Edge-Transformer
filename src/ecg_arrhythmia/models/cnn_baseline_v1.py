@@ -6,7 +6,7 @@ from torch import nn
 # This says that our model is a pytorch model. This gives
 # our model behaviour like mode.parameters, model.train,
 # model.eval, model.state_dict() etc.
-class CNNBaseline(nn.Module):
+class CNNBaselineV1(nn.Module):
     def __init__(self, num_classes: int = 4):
         # creates the internal storage PyTorch uses to track
         # our model
