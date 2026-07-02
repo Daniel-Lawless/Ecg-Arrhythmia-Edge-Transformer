@@ -1,9 +1,0 @@
-## Baseline CNN - 2026-07-01
-
-- Patient-level split
-- 4 classes: N, S, V, F
-- Q excluded during build
-- Weighted CrossEntropyLoss
-- Best val macro F1: ~0.40
-- N strong, V okay, S poor, F very poor
-- Next: confusion matrix. May experiement with: WeightedRandomSampler, dropout/batch norm
