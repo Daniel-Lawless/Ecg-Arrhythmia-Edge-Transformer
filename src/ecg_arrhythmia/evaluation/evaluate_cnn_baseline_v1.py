@@ -34,7 +34,7 @@ def load_model(checkpoint_path: Path, device: torch.device) -> CNNBaseline:
     # Load the weights learned from training
     state_dict = torch.load(checkpoint_path, map_location=device)
 
-    # Load weights into model 
+    # Load weights into model
     model.load_state_dict(state_dict)
 
     return model
@@ -44,7 +44,7 @@ def build_confusion_matrix_rows(
     confusion_matrix: list[list[int]],
 ) -> list[dict[str, object]]:
     labels = [INDEX_TO_LABEL[index] for index in range(NUM_CLASSES)]
-    
+
     return [
         {
             "true_label": true_label,
@@ -73,7 +73,7 @@ def format_metrics_for_json(metrics: EvaluationMetrics) -> dict[str, object]:
 
 def save_metrics(metrics: EvaluationMetrics, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with output_path.open("w", encoding="utf8") as file:
         json.dump(format_metrics_for_json(metrics), file, indent=4)
 
