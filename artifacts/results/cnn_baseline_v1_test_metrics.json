@@ -1,0 +1,82 @@
+{
+    "loss": 1.2183,
+    "accuracy": 0.6549,
+    "macro_f1": 0.27,
+    "per_class": {
+        "N": {
+            "precision": 0.8992,
+            "recall": 0.7032,
+            "f1": 0.7892,
+            "total_class_count": 13961
+        },
+        "S": {
+            "precision": 0.0107,
+            "recall": 0.1346,
+            "f1": 0.0197,
+            "total_class_count": 312
+        },
+        "V": {
+            "precision": 0.4388,
+            "recall": 0.196,
+            "f1": 0.271,
+            "total_class_count": 1097
+        },
+        "F": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "total_class_count": 14
+        }
+    },
+    "confusion_matrix": {
+        "description": "Rows are true labels; columns are predicted labels.",
+        "labels": [
+            "N",
+            "S",
+            "V",
+            "F"
+        ],
+        "rows": [
+            {
+                "true_label": "N",
+                "predictions": {
+                    "N": 9818,
+                    "S": 3862,
+                    "V": 270,
+                    "F": 11
+                },
+                "total": 13961
+            },
+            {
+                "true_label": "S",
+                "predictions": {
+                    "N": 266,
+                    "S": 42,
+                    "V": 4,
+                    "F": 0
+                },
+                "total": 312
+            },
+            {
+                "true_label": "V",
+                "predictions": {
+                    "N": 822,
+                    "S": 38,
+                    "V": 215,
+                    "F": 22
+                },
+                "total": 1097
+            },
+            {
+                "true_label": "F",
+                "predictions": {
+                    "N": 13,
+                    "S": 0,
+                    "V": 1,
+                    "F": 0
+                },
+                "total": 14
+            }
+        ]
+    }
+}

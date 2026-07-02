@@ -5,3 +5,7 @@ __pycache__/
 *.npy
 /data/
 *.egg-info/
+artifacts/models/
+*.pt
+*.pth
+*.onnx

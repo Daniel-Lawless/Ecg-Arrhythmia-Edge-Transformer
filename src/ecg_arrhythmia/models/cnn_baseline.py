@@ -7,7 +7,7 @@ from torch import nn
 # our model behaviour like mode.parameters, model.train,
 # model.eval, model.state_dict() etc.
 class CNNBaseline(nn.Module):
-    def __init__(self, num_classes: int = 5):
+    def __init__(self, num_classes: int = 4):
         # creates the internal storage PyTorch uses to track
         # our model
         super().__init__()
@@ -25,14 +25,12 @@ class CNNBaseline(nn.Module):
             # ReLu breaks linearlity so the model can learn complex patterns
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
-            # After pooling (batch_size, 16, 120)
-            # input: (batch_size, 16, 120)
+            # Output: (batch_size, 16, 120)
             nn.Conv1d(in_channels=16, out_channels=32, kernel_size=5, padding=2),
             # output: (batch_size, 32, 120)
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
             # output: (batch_size, 32, 60)
-            # input: (batch_size, 16, 60)
             nn.Conv1d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
             # output: (batch_size, 64, 60)
             nn.ReLU(),
