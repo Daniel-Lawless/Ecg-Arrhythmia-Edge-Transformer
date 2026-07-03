@@ -34,22 +34,13 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
         annotation = FakeAnnotation()
         return signals, fields, annotation
 
-    def fake_select_signal_channel(
-            signals,
-            fields,
-            preferred_lead="MLII"
-    ):
+    def fake_select_signal_channel(signals, fields, preferred_lead="MLII"):
         record_name = fields["record_name"]
         signal = np.array([beat_counts[record_name]])
         lead_name = "MLII"
         return signal, lead_name
 
-    def fake_extract_beats(
-            signal,
-            annotation_samples,
-            annotation_symbols,
-            normalise
-    ):
+    def fake_extract_beats(signal, annotation_samples, annotation_symbols, normalise):
         number_of_beats = int(signal[0])
         beats = np.ones((number_of_beats, 240))
         labels = np.array(["N"] * number_of_beats)
@@ -59,19 +50,15 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
     # other method, it uses our fake equivalent.
     monkeypatch.setattr(
         build_dataset_module,  # The file to look in
-        "load_record",         # The function to look for
-        fake_load_record,      # The function to replace it with
+        "load_record",  # The function to look for
+        fake_load_record,  # The function to replace it with
     )
     monkeypatch.setattr(
         build_dataset_module,
         "select_signal_channel",
         fake_select_signal_channel,
     )
-    monkeypatch.setattr(
-        build_dataset_module,
-        "extract_beats",
-        fake_extract_beats
-    )
+    monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
     # Extract data, patient_ids, and metadata
     X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
@@ -147,30 +134,17 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     ):
         return np.array([2]), "MLII"
 
-    def fake_extract_beats(
-            signal,
-            annotation_samples,
-            annotation_symbols,
-            normalise
-    ):
+    def fake_extract_beats(signal, annotation_samples, annotation_symbols, normalise):
         return np.ones((2, 240)), np.array(["N", "N"])
 
     # Make is so these fake methods are called instead in build_dataset
-    monkeypatch.setattr(
-        build_dataset_module,
-        "load_record",
-        fake_load_record
-    )
+    monkeypatch.setattr(build_dataset_module, "load_record", fake_load_record)
     monkeypatch.setattr(
         build_dataset_module,
         "select_signal_channel",
         fake_select_signal_channel,
     )
-    monkeypatch.setattr(
-        build_dataset_module,
-        "extract_beats",
-        fake_extract_beats
-    )
+    monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
     # Build data and metadata.
     X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
@@ -190,6 +164,7 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     assert len(record_segments) == 1
     assert record_segments[0]["record_id"] == "100"
 
+
 def test_build_dataset_passes_normalise_flag_to_extract_beats(tmp_path, monkeypatch):
     seen_normalise_values = []
 
@@ -200,37 +175,21 @@ def test_build_dataset_passes_normalise_flag_to_extract_beats(tmp_path, monkeypa
         annotation = FakeAnnotation()
         return signals, fields, annotation
 
-    def fake_select_signal_channel(
-            signals, fields,
-            preferred_lead="MLII"
-    ):
+    def fake_select_signal_channel(signals, fields, preferred_lead="MLII"):
         return np.array([1]), "MLII"
 
-    def fake_extract_beats(
-            signal,
-            annotation_samples,
-            annotation_symbols,
-            normalise
-    ):
+    def fake_extract_beats(signal, annotation_samples, annotation_symbols, normalise):
         seen_normalise_values.append(normalise)
         return np.ones((1, 240)), np.array(["N"])
 
     # Use fake functions
-    monkeypatch.setattr(
-        build_dataset_module,
-        "load_record",
-        fake_load_record
-    )
+    monkeypatch.setattr(build_dataset_module, "load_record", fake_load_record)
     monkeypatch.setattr(
         build_dataset_module,
         "select_signal_channel",
         fake_select_signal_channel,
     )
-    monkeypatch.setattr(
-        build_dataset_module,
-        "extract_beats",
-        fake_extract_beats
-    )
+    monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
     build_dataset_module.build_dataset(
         record_names=["100"],
