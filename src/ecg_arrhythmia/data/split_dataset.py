@@ -1,5 +1,5 @@
-import json
 import argparse
+import json
 import logging
 from collections import Counter
 from pathlib import Path
@@ -455,6 +455,7 @@ def split_processed_dataset(
 
     return splits
 
+
 def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(description="Split dataset config")
@@ -478,10 +479,7 @@ def main() -> None:
         logger.info("Using normalised input")
         input_dir = Path("data/processed_normalised")
         output_dir = Path("data/splits_normalised")
-        split_processed_dataset(
-            input_dir=input_dir,
-            output_dir=output_dir
-        )
+        split_processed_dataset(input_dir=input_dir, output_dir=output_dir)
 
     else:
         split_processed_dataset()

@@ -440,7 +440,7 @@ def main() -> None:
 
     # Define where we want the final learned model weights
     # to be stored and make the directory.
-    
+
     if args.model_output_path is None:
         model_output_path = Path(f"artifacts/models/{args.model_name}.pt")
     else:
