@@ -23,7 +23,7 @@ def extract_beats(
     signal: np.ndarray,
     annotation_samples: np.ndarray,
     annotation_symbols: list[str],
-    normalise: bool = False
+    normalise: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
 
     extracted_beats = []

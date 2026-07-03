@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 
 
 def load_model(
-        checkpoint_path: Path,
-        model_name: str,
-        device: torch.device,
-        ) -> nn.Module:
-    
+    checkpoint_path: Path,
+    model_name: str,
+    device: torch.device,
+) -> nn.Module:
+
     if model_name == "cnn_baseline_v1":
         # Make empty V1 model skelton to load weights into
         model = CNNBaselineV1(num_classes=NUM_CLASSES).to(device)
@@ -43,7 +43,7 @@ def load_model(
 
         # Load weights into model
         model.load_state_dict(state_dict)
-    
+
     elif model_name == "cnn_baseline_v2":
         # We don't need to pass dropout since it will be turned
         # off for inference anyway
@@ -54,8 +54,8 @@ def load_model(
 
         # Load weights into model
         model.load_state_dict(state_dict)
-    
-    else: 
+
+    else:
         raise ValueError(f"Cannot load model unknown model: {model_name}")
 
     return model
@@ -126,11 +126,7 @@ def parse_args() -> argparse.Namespace:
         default=Path("data/splits/train"),
     )
 
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=64
-    )
+    parser.add_argument("--batch-size", type=int, default=64)
 
     return parser.parse_args()
 
@@ -170,9 +166,7 @@ def main() -> None:
 
     # Load the model
     model = load_model(
-        checkpoint_path=checkpoint_path,
-        model_name=args.model_name,
-        device=device
+        checkpoint_path=checkpoint_path, model_name=args.model_name, device=device
     )
 
     # Important note for future reference:
