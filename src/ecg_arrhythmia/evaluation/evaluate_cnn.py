@@ -128,6 +128,20 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--batch-size", type=int, default=64)
 
+    parser.add_argument(
+        "--checkpoint-path",
+        type=Path,
+        default=None,
+        help="Path to trained model weights.",
+    )
+
+    parser.add_argument(
+        "--output-path",
+        type=Path,
+        default=None,
+        help="Where to save evaluation metrics.",
+    )
+
     return parser.parse_args()
 
 
@@ -162,7 +176,10 @@ def main() -> None:
         shuffle=False,
     )
 
-    checkpoint_path = Path("artifacts/models") / f"{args.model_name}.pt"
+    if args.checkpoint_path is None:
+        checkpoint_path = Path("artifacts/models") / f"{args.model_name}.pt"
+    else:
+        checkpoint_path = args.checkpoint_path
 
     # Load the model
     model = load_model(
@@ -193,7 +210,10 @@ def main() -> None:
     log_confusion_matrix(metrics)
 
     # Define output path
-    output_path = Path("artifacts/results") / f"{args.model_name}_test_metrics.json"
+    if args.output_path is None:
+        output_path = Path("artifacts/results") / f"{args.model_name}_test_metrics.json"
+    else:
+        output_path = args.output_path
 
     # Save metrics
     save_metrics(metrics, output_path)
