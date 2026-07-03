@@ -23,6 +23,7 @@ def extract_beats(
     signal: np.ndarray,
     annotation_samples: np.ndarray,
     annotation_symbols: list[str],
+    normalise: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
 
     extracted_beats = []
@@ -47,6 +48,10 @@ def extract_beats(
 
         # 240 sample beat
         beat = signal[start:end]
+
+        # Normalise the beat
+        if normalise:
+            beat = (beat - beat.mean()) / (beat.std() + 1e-8)
 
         # Append window and corresponding symbol.
         extracted_beats.append(beat)
