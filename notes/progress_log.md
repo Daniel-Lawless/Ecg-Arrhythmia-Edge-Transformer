@@ -284,6 +284,60 @@ Key lesson:
 - `S` improved slightly but remains weak.
 - `F` remains extremely poor and difficult to judge because the test set contains very few `F` examples.
 
+## Milestone 10 — Per-beat normalisation experiment
+
+Implemented:
+
+- Added optional per-beat z-score normalisation during beat extraction.
+- Each beat window can now be normalised using its own mean and standard deviation:
+
+```text
+normalised_beat = (beat - beat.mean()) / beat.std()
+```
+
+- Kept normalisation optional so the original raw-signal baseline remains reproducible.
+- Saved normalised processed data separately from the original dataset.
+- Created separate normalised train/validation/test splits.
+- Updated training and evaluation scripts so models can be trained and evaluated using custom split directories and checkpoint paths.
+- Trained and evaluated normalised versions of both CNN baselines.
+
+saved outputs to 
+```text
+artifacts/models/cnn_baseline_v1_normalised.pt
+artifacts/models/cnn_baseline_v2_normalised.pt
+artifacts/results/cnn_baseline_v1_normalised_test_metrics.json
+artifacts/results/cnn_baseline_v2_normalised_test_metrics.json
+```
+
+Test results:
+
+| Model | Normalised? | Test loss | Test accuracy | Test macro F1 |
+|:---:|:---:|:---:|:---:|:---:|
+| CNN Baseline V1 | No | 1.2953 | 0.7177 | 0.2807 |
+| CNN Baseline V1 | Yes | 0.9969 | 0.8684 | 0.3737 |
+| CNN Baseline V2 | No | 1.0929 | 0.7121 | 0.3256 |
+| CNN Baseline V2 | Yes | 1.1696 | 0.7349 | 0.3131 |
+
+Per-class test F1:
+
+| Class | V1 raw | V1 normalised | V2 raw | V2 normalised |
+|:---:|:---:|:---:|:---:|:---:|
+| N | 0.8372 | 0.9298 | 0.8268 | 0.8406 |
+| S | 0.0287 | 0.0049 | 0.0537 | 0.0404 |
+| V | 0.2450 | 0.5600 | 0.4118 | 0.3713 |
+| F | 0.0120 | 0.0000 | 0.0100 | 0.0000 |
+
+key lesson:
+- Per-beat normalisation significantly improved CNN Baseline V1 overall.
+- V1 macro F1 increased from 0.2807 to 0.3737.
+- The largest improvement came from class V, where F1 increased from 0.2450 to 0.5600.
+- Normalisation also improved V1 accuracy from 0.7177 to 0.8684.
+- CNN Baseline V2 did not benefit from normalisation overall; macro F1 decreased from 0.3256 to 0.3131.
+- S remains very weak across all experiments, suggesting that morphology-only beat windows are not enough for supraventricular beat detection. RR intervals can help here because supraventricular beats are often reflected more clearly in rhythm/timing patterns than in QRS morphology. They can occur prematurely with a shortened previous RR interval, while their QRS morphology may still look close to normal, which is why they are often predicted as N. So RR features could provide context that the CNN is currently missing.
+- F remains difficult to interpret because the test set contains only a very small number of F beats.
+- The next improvement should add rhythm/context information, such as RR interval features. Since the goal is real-time edge compute I'll add previous RR intervals only
+
+
 ## Current project status
 
 The project now has a complete baseline ECG classification pipeline:
@@ -305,12 +359,14 @@ The project now has a complete baseline ECG classification pipeline:
 - integration tests
 - continuous integration
 
-CNN Baseline V2 is currently the best CNN reference model.
+CNN Baseline V2 remains the strongest raw-signal CNN reference model, while CNN Baseline V1 with per-beat normalisation currently gives the best test macro F1 overall.
 
 ## Next steps
 
 Next steps include:
 
+- Add RR interval features to give the model rhythm context, especially to improve the weak `S` class.
+- Compare raw beat windows, normalised beat windows, and rhythm-enhanced inputs under the same patient-level split.
 - Move from isolated beat classification to context-aware modelling.
 - Build a sequence model that can use neighbouring beats or longer ECG windows.
 - Compare CNN baselines against a transformer-style model.
