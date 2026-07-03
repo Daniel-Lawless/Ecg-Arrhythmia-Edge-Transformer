@@ -9,3 +9,4 @@ artifacts/models/
 *.pt
 *.pth
 *.onnx
+.vscode/

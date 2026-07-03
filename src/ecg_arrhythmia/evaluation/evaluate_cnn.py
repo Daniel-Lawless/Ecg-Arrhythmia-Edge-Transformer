@@ -106,7 +106,7 @@ def save_metrics(metrics: EvaluationMetrics, output_path: Path) -> None:
 
 def parse_args() -> argparse.Namespace:
     # Creat parser object
-    parser = argparse.ArgumentParser(description="Evaluate CNN baseline v1.")
+    parser = argparse.ArgumentParser(description="Evaluate a CNN baseline model.")
 
     # Add command line arguments
     parser.add_argument(

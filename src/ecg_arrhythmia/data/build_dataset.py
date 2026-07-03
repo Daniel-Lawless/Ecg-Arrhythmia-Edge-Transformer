@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 from pathlib import Path
@@ -58,6 +59,7 @@ def build_dataset(
     output_dir: Path = Path("data/processed"),
     excluded_records: set[str] | None = None,
     excluded_labels: set[str] | None = None,
+    normalise_beats: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[RecordSegment]]:
     """
     Build a beat-level ECG dataset from MIT-BIH records.
@@ -115,6 +117,7 @@ def build_dataset(
             signal=signal,
             annotation_samples=annotation.sample,
             annotation_symbols=annotation.symbol,
+            normalise=normalise_beats,
         )
 
         # Map each label to its AAMI map
@@ -234,10 +237,34 @@ def build_dataset(
     return X_data, y_labels, patient_ids, record_segments
 
 
+# CLI
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Dataset config")
+
+    parser.add_argument(
+        "--normalise-beats",
+        # If it is provided it'll be True, False otherwise
+        action="store_true",
+        help="Apply per-beat z-score normalisation during beat extraction.",
+    )
+
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
+    args = parse_args()
+
+    output_dir = (
+        Path("data/processed_normalised")
+        if args.normalise_beats
+        else Path("data/processed")
+    )
+
     build_dataset(
+        output_dir=output_dir,
         excluded_records=PACED_RECORDS,
         excluded_labels=EXCLUDED_AAMI_LABELS,
+        normalise_beats=args.normalise_beats,
     )
