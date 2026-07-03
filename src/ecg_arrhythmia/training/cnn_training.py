@@ -357,6 +357,13 @@ def parse_args() -> argparse.Namespace:
         "--dropout", type=float, default=0.3, help="Choose dropout probability"
     )
 
+    parser.add_argument(
+        "--model-output-path",
+        type=Path,
+        default=None,
+        help="Where to save the best model checkpoint.",
+    )
+
     return parser.parse_args()
 
 
@@ -433,7 +440,12 @@ def main() -> None:
 
     # Define where we want the final learned model weights
     # to be stored and make the directory.
-    model_output_path = Path(f"artifacts/models/{args.model_name}.pt")
+
+    if args.model_output_path is None:
+        model_output_path = Path(f"artifacts/models/{args.model_name}.pt")
+    else:
+        model_output_path = args.model_output_path
+
     model_output_path.parent.mkdir(parents=True, exist_ok=True)
     # Note parent.mkdir creates the directory one level above the
     # final file name.
