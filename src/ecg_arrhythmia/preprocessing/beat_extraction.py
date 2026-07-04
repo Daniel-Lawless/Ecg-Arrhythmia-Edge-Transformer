@@ -111,7 +111,7 @@ def extract_beats(
             # Empty numpy array for labels
             np.array([], dtype=str),
             # Empty numpy array for rr_features
-            np.array((0, 2), dtype=np.float32),
+            np.empty((0, 2), dtype=np.float32),
         )
 
     # Stacks the list of numpy arrays into a 2d matrix.

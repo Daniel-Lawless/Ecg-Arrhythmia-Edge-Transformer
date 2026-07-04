@@ -44,7 +44,8 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
         number_of_beats = int(signal[0])
         beats = np.ones((number_of_beats, 240))
         labels = np.array(["N"] * number_of_beats)
-        return beats, labels
+        rr_features = np.ones((number_of_beats, 2))
+        return beats, labels, rr_features
 
     # This makes it so when we do build_dataset_module.load_record, or any
     # other method, it uses our fake equivalent.
@@ -60,10 +61,12 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
-    # Extract data, patient_ids, and metadata
-    X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
-        record_names=["100", "201", "202"],
-        output_dir=Path(tmp_path),
+    # Extract data, patient_ids, rr features, and metadata
+    X, y, patient_ids, rr_features, record_segments = (
+        build_dataset_module.build_dataset(
+            record_names=["100", "201", "202"],
+            output_dir=Path(tmp_path),
+        )
     )
 
     # Since the total number of windows was 6, each of length 240
@@ -72,6 +75,8 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
     assert y.shape == (6,)
     # Each window also has a patient_id
     assert patient_ids.shape == (6,)
+    # Each window also has an RR feature row.
+    assert rr_features.shape == (6, 2)
 
     # Patient_ids should be as follows
     assert patient_ids.tolist() == [
@@ -88,6 +93,7 @@ def test_build_dataset_saves_arrays_and_record_segments(tmp_path, monkeypatch):
     assert (tmp_path / "y.npy").exists()
     assert (tmp_path / "record_segments.json").exists()
     assert (tmp_path / "patient_ids.npy").exists()
+    assert (tmp_path / "rr_features.npy").exists()
 
     # Check the metadata loads correctly.
     assert record_segments == [
@@ -135,7 +141,10 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
         return np.array([2]), "MLII"
 
     def fake_extract_beats(signal, annotation_samples, annotation_symbols, normalise):
-        return np.ones((2, 240)), np.array(["N", "N"])
+        beats = np.ones((2, 240))
+        labels = np.array(["N", "N"])
+        rr_features = np.ones((2, 2))
+        return beats, labels, rr_features
 
     # Make is so these fake methods are called instead in build_dataset
     monkeypatch.setattr(build_dataset_module, "load_record", fake_load_record)
@@ -147,10 +156,12 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     monkeypatch.setattr(build_dataset_module, "extract_beats", fake_extract_beats)
 
     # Build data and metadata.
-    X, y, patient_ids, record_segments = build_dataset_module.build_dataset(
-        record_names=["100", "102", "104"],
-        output_dir=Path(tmp_path),
-        excluded_records=build_dataset_module.PACED_RECORDS,
+    X, y, patient_ids, rr_features, record_segments = (
+        build_dataset_module.build_dataset(
+            record_names=["100", "102", "104"],
+            output_dir=Path(tmp_path),
+            excluded_records=build_dataset_module.PACED_RECORDS,
+        )
     )
 
     # Since record 100 is the only non-paced record, it should
@@ -158,6 +169,7 @@ def test_build_dataset_can_exclude_records(tmp_path, monkeypatch):
     assert X.shape == (2, 240)
     assert y.shape == (2,)
     assert patient_ids.shape == (2,)
+    assert rr_features.shape == (2, 2)
     assert patient_ids.tolist() == ["100", "100"]
 
     # Only metadata from record 100 should exist.
@@ -180,7 +192,10 @@ def test_build_dataset_passes_normalise_flag_to_extract_beats(tmp_path, monkeypa
 
     def fake_extract_beats(signal, annotation_samples, annotation_symbols, normalise):
         seen_normalise_values.append(normalise)
-        return np.ones((1, 240)), np.array(["N"])
+        beats = np.ones((1, 240))
+        labels = np.array(["N"])
+        rr_features = np.ones((1, 2))
+        return beats, labels, rr_features
 
     # Use fake functions
     monkeypatch.setattr(build_dataset_module, "load_record", fake_load_record)
