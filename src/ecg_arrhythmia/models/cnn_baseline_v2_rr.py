@@ -95,11 +95,12 @@ class CNNBaselineV2RR(nn.Module):
         # x : (batch_size, 128)
         # rr: (batch_size, 16)
         # com:(batch_size, 144)
-        # example 
+        # example
         combined = torch.cat([x, rr], dim=1)
         # output: (batch_size, 144)
 
         return self.classifier(combined)
+
 
 ## Combined example for future reference:
 # x = torch.tensor([
@@ -112,7 +113,7 @@ class CNNBaselineV2RR(nn.Module):
 #     [30, 40],
 # ]) shape = (2,2)
 # combine = torch.cat([x, rr], dim=1)
-# 
+#
 # com = torch.tensor([
 #       [1,2,3,10,20],
 #       [4,5,6,30,40]

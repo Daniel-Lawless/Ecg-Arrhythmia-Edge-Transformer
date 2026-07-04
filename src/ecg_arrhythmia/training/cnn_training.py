@@ -282,7 +282,7 @@ def train_one_epoch(
         optimiser.zero_grad()
 
         # Calculate raw logits. Puts X_batch and rr_batch
-        # through the forward pass we defined in 
+        # through the forward pass we defined in
         # cnn_baseline_v2_rr.py
         if use_rr_features:
             logits = model(X_batch, rr_batch)
