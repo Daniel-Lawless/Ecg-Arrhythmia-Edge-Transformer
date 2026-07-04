@@ -337,44 +337,109 @@ key lesson:
 - F remains difficult to interpret because the test set contains only a very small number of F beats.
 - The next improvement should add rhythm/context information, such as RR interval features. Since the goal is real-time edge compute I'll add previous RR intervals only
 
+## Milestone 11 — RR Interval Features and CNN Baseline V2 RR
 
-## Current project status
+### Implemented
 
-The project now has a complete baseline ECG classification pipeline:
+Added RR interval features to the ECG preprocessing and CNN training pipeline.
 
-- MIT-BIH record loading
-- ECG signal-channel selection
-- beat-window extraction
-- AAMI label mapping
-- processed dataset saving
-- patient-level splitting
-- PyTorch dataset loading
-- CNN baseline models
-- weighted training
-- validation and checkpointing
-- shared evaluation pipeline
-- per-class metrics
-- confusion matrix reporting
-- unit tests
-- integration tests
-- continuous integration
+Each beat-level sample can now include:
 
-CNN Baseline V2 remains the strongest raw-signal CNN reference model, while CNN Baseline V1 with per-beat normalisation currently gives the best test macro F1 overall.
+- the 240-sample ECG beat window
+- RR timing features:
+  - previous RR interval in seconds
+  - RR ratio relative to recent rhythm
 
-## Next steps
+Updated the project so RR features flow through:
 
-Next steps include:
+- beat extraction
+- dataset building
+- dataset loading and validation
+- patient-wise train/validation/test splitting
+- PyTorch `ECGDataset`
+- CNN training
+- CNN evaluation
 
-- Add RR interval features to give the model rhythm context, especially to improve the weak `S` class.
-- Compare raw beat windows, normalised beat windows, and rhythm-enhanced inputs under the same patient-level split.
-- Move from isolated beat classification to context-aware modelling.
-- Build a sequence model that can use neighbouring beats or longer ECG windows.
-- Compare CNN baselines against a transformer-style model.
-- Track not only macro F1, but also:
-  - model size
-  - inference latency
-  - memory usage
-  - CPU performance
-- Export the best model to ONNX.
-- Test simulated real-time inference using MIT-BIH signals replayed as a stream.
-- Prepare for edge deployment on a Raspberry Pi or similar low-power device.
+Added a new model:
+
+- `CNNBaselineV2RR`
+
+This model combines ECG morphology features learned by the CNN with RR timing features before classification.
+
+### Comparison Tested
+
+To isolate the effect of RR intervals, the key comparison is:
+
+| Model | RR Features? | Normalised? |
+|:---:|:---:|:---:|
+| CNN Baseline V2 | No | No |
+| CNN Baseline V2 RR | Yes | No |
+
+This comparison keeps normalisation fixed and only changes whether RR interval features are provided.
+
+### Test Results
+
+| Model | Test Loss | Test Accuracy | Test Macro F1 |
+|:---:|:---:|:---:|:---:|
+| CNN Baseline V2 | 1.0929 | 0.7121 | 0.3256 |
+| CNN Baseline V2 + RR | 0.7311 | 0.8014 | 0.4113 |
+
+### Per-Class F1
+
+| Class | CNN V2 | CNN V2 + RR | Change |
+|:---:|:---:|:---:|:---:|
+| N | 0.8268 | 0.8936 | +0.0668 |
+| S | 0.0537 | 0.2397 | +0.1860 |
+| V | 0.4118 | 0.5097 | +0.0979 |
+| F | 0.0100 | 0.0023 | -0.0077 |
+
+### Key Findings
+
+Adding RR interval features improved overall model performance.
+
+Macro F1 increased from `0.3256` to `0.4113`, showing that the RR-enhanced model performed better across classes rather than only improving accuracy on the majority class.
+
+The largest improvement was on the `S` class:
+
+| Metric | CNN V2 | CNN V2 + RR |
+|:---:|:---:|:---:|
+| Precision | 0.0347 | 0.3096 |
+| Recall | 0.1186 | 0.1955 |
+| F1 | 0.0537 | 0.2397 |
+
+This supports the original motivation outlined yesterday for adding RR intervals. Supraventricular ectopic beats can look morphologically similar to normal beats, so timing context helps the model identify them.
+
+### Confusion Matrix Notes
+
+For true `S` beats:
+
+| Model | Predicted N | Predicted S | Predicted V | Predicted F |
+|:---:|:---:|:---:|:---:|:---:|
+| CNN V2 | 75 | 37 | 131 | 69 |
+| CNN V2 + RR | 45 | 61 | 177 | 29 |
+
+The RR model correctly identified more `S` beats, increasing correct `S` predictions from `37` to `61`.
+
+It also reduced the number of `S` beats incorrectly predicted as `N` or `F`.
+
+### Conclusion
+
+`CNNBaselineV2RR` is the strongest CNN baseline so far.
+
+The results show that adding RR interval features improves performance over the morphology-only CNN V2 baseline, especially for the minority `S` class.
+
+Current best CNN model:
+
+### Current Best Baseline
+
+| Model | Test macro F1 |
+|:---:|:---:|
+| CNN V2 without RR | 0.3256 |
+| CNN V2 + RR normalised | 0.3644 |
+| CNN V1 + normalised | 0.3737 |
+| CNN V2 + RR unnormalised | 0.4113 |
+
+### Next steps
+
+The next modelling stage should compare this RR-enhanced CNN against the transformer/sequence model, since the transformer should be able to use
+surrounding beat context more naturally.
