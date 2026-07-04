@@ -7,20 +7,28 @@ import numpy as np
 
 def load_dataset(
     index_path: Path = Path("data/processed"),
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, list]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[dict[str, Any]]]:
 
     # Specify paths
     X_set_path = index_path / "X.npy"
     y_set_path = index_path / "y.npy"
     patient_ids_path = index_path / "patient_ids.npy"
+    rr_features_path = index_path / "rr_features.npy"
     metadata_path = index_path / "record_segments.json"
 
     # Check if the files exist
     if not X_set_path.exists():
-        raise FileNotFoundError(f"No file at {X_set_path}", "No X data has been saved")
-
+        raise FileNotFoundError(
+            f"No file at {X_set_path}", "No X data has been saved"
+        )
     if not y_set_path.exists():
-        raise FileNotFoundError(f"No file at {y_set_path}", "No y data has been saved")
+        raise FileNotFoundError(
+            f"No file at {y_set_path}", "No y data has been saved"
+        )
+    if not rr_features_path.exists():
+        raise FileNotFoundError(
+            f"No file at {rr_features_path}", "No rr_features saved"
+        )
     if not patient_ids_path.exists():
         raise FileNotFoundError(
             f"No file at {patient_ids_path}", "No patient_ids have been saved"
@@ -29,35 +37,53 @@ def load_dataset(
         raise FileNotFoundError(
             f"No file at {metadata_path}", "No record metadata was found"
         )
-    # Load X and y data
+    # Load data
     X = np.load(X_set_path)
     y = np.load(y_set_path)
+    rr_features = np.load(rr_features_path)
     patient_ids = np.load(patient_ids_path)
 
     # Load record metadata.
     with metadata_path.open("r", encoding="utf8") as file:
         record_metadata = json.load(file)
 
-    return X, y, patient_ids, record_metadata
+    return X, y, patient_ids, rr_features, record_metadata
 
 
 def validate_dataset(
     X: np.ndarray,
     y: np.ndarray,
     patient_ids: np.ndarray,
+    rr_features: np.ndarray,
     record_metadata: list[dict[str, Any]],
 ) -> None:
-
-    # Checks if each window has a corresponding label.
+    
     if X.shape[0] != y.shape[0]:
         raise ValueError(
             f"X and y counts row counts do not match. {X.shape[0]} != {y.shape[0]} "
         )
-
     if patient_ids.shape[0] != X.shape[0]:
         raise ValueError(
-            "Each beat must have a patient_ids"
+            "Each beat must have a patient_id"
             f"Found {patient_ids.shape[0]} patient ids and {X.shape[0]} beats"
+        )
+    if rr_features.ndim != 2 or rr_features.shape[1] != 2:
+        raise ValueError(
+            f"rr_features must have shape (num_beats, 2). "
+            f"Found shape {rr_features.shape}"
+        )
+    if rr_features.shape[0] != X.shape[0]:
+        raise ValueError(
+            "There must be one rr_feature row per beat. "
+            f"Found {rr_features.shape[0]} rr feature rows and {X.shape[0]} beats"
+        )
+    if not np.all(np.isfinite(rr_features)):
+        raise ValueError(
+            "rr_features must only contain finite values"
+        )
+    if np.any(rr_features <= 0):
+        raise ValueError(
+            "rr_features should contain positive RR intervals and ratios"
         )
 
     # First records starting position
