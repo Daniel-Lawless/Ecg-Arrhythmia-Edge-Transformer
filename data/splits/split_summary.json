@@ -7,8 +7,8 @@
         "test_ratio": 0.15
     },
     "true_dataset_counts": {
-        "N": 90089,
-        "V": 7008,
+        "N": 90059,
+        "V": 7007,
         "S": 2781,
         "F": 802
     },
@@ -20,7 +20,7 @@
     },
     "splits": {
         "train": {
-            "number_of_beats": 70643,
+            "number_of_beats": 70620,
             "num_patients": 30,
             "obtained_ratio": 0.7,
             "patient_ids": [
@@ -56,20 +56,44 @@
                 "234"
             ],
             "class_counts": {
-                "N": 62996,
-                "V": 4840,
+                "N": 62974,
+                "V": 4839,
                 "S": 2044,
                 "F": 763
             },
             "class_proportions": {
-                "N": 0.8918,
+                "N": 0.8917,
                 "V": 0.0685,
                 "S": 0.0289,
                 "F": 0.0108
+            },
+            "rr_features": {
+                "shape": [
+                    70620,
+                    2
+                ],
+                "num_nan": 0,
+                "num_inf": 0,
+                "feature_stats": {
+                    "prev_rr_seconds": {
+                        "mean": 0.7914,
+                        "std": 0.2377,
+                        "min": 0.25,
+                        "median": 0.7389,
+                        "max": 3.0
+                    },
+                    "rr_ratio": {
+                        "mean": 1.0033,
+                        "std": 0.201,
+                        "min": 0.2811,
+                        "median": 0.9961,
+                        "max": 4.0
+                    }
+                }
             }
         },
         "val": {
-            "number_of_beats": 14653,
+            "number_of_beats": 14649,
             "num_patients": 6,
             "obtained_ratio": 0.15,
             "patient_ids": [
@@ -81,7 +105,7 @@
                 "233"
             ],
             "class_counts": {
-                "N": 13132,
+                "N": 13128,
                 "V": 1071,
                 "S": 425,
                 "F": 25
@@ -91,10 +115,34 @@
                 "V": 0.0731,
                 "S": 0.029,
                 "F": 0.0017
+            },
+            "rr_features": {
+                "shape": [
+                    14649,
+                    2
+                ],
+                "num_nan": 0,
+                "num_inf": 0,
+                "feature_stats": {
+                    "prev_rr_seconds": {
+                        "mean": 0.739,
+                        "std": 0.2339,
+                        "min": 0.2889,
+                        "median": 0.6972,
+                        "max": 1.8028
+                    },
+                    "rr_ratio": {
+                        "mean": 1.0018,
+                        "std": 0.1493,
+                        "min": 0.2925,
+                        "median": 0.9981,
+                        "max": 2.2834
+                    }
+                }
             }
         },
         "test": {
-            "number_of_beats": 15384,
+            "number_of_beats": 15380,
             "num_patients": 7,
             "obtained_ratio": 0.15,
             "patient_ids": [
@@ -107,7 +155,7 @@
                 "223"
             ],
             "class_counts": {
-                "N": 13961,
+                "N": 13957,
                 "V": 1097,
                 "S": 312,
                 "F": 14
@@ -117,6 +165,30 @@
                 "V": 0.0713,
                 "S": 0.0203,
                 "F": 0.0009
+            },
+            "rr_features": {
+                "shape": [
+                    15380,
+                    2
+                ],
+                "num_nan": 0,
+                "num_inf": 0,
+                "feature_stats": {
+                    "prev_rr_seconds": {
+                        "mean": 0.8125,
+                        "std": 0.1559,
+                        "min": 0.3611,
+                        "median": 0.8111,
+                        "max": 3.0
+                    },
+                    "rr_ratio": {
+                        "mean": 1.0013,
+                        "std": 0.1493,
+                        "min": 0.2909,
+                        "median": 0.9981,
+                        "max": 3.8257
+                    }
+                }
             }
         }
     }
