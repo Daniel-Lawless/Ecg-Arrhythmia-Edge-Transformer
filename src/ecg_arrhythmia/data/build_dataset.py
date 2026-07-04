@@ -113,7 +113,7 @@ def build_dataset(
             raise ValueError(f"Record {record_name} contains no annotation symbols")
 
         # Extract beats and labels for this record.
-        beats_matrix, labels = extract_beats(
+        beats_matrix, labels, rr_features = extract_beats(
             signal=signal,
             annotation_samples=annotation.sample,
             annotation_symbols=annotation.symbol,

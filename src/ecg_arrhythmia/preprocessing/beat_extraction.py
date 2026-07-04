@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Any
 
 # Recognised heartbeat annotations. This will exclude non heart beat annotations
 # fmt: off
@@ -23,6 +22,7 @@ SAMPLING_RATE = 360
 
 LOCAL_RR_WINDOW = 10
 
+
 # Extract beats and labels for a given signal.
 def extract_beats(
     signal: np.ndarray,
@@ -35,7 +35,7 @@ def extract_beats(
     extracted_labels = []
     rr_features = []
 
-    previous_heartbeat_sample : int | None = None
+    previous_heartbeat_sample: int | None = None
     recent_rr_seconds: list[float] = []
 
     # Creates a 240 sample window around each annotation index.
@@ -111,11 +111,11 @@ def extract_beats(
             # Empty numpy array for labels
             np.array([], dtype=str),
             # Empty numpy array for rr_features
-            np.array((0, 2), dtype=np.float32)
+            np.array((0, 2), dtype=np.float32),
         )
 
     # Stacks the list of numpy arrays into a 2d matrix.
     beats_matrix = np.vstack(extracted_beats)
-    rr_features_matrix = np.array(rr_features)
+    rr_features = np.array(rr_features)
 
-    return beats_matrix, labels, rr_features_matrix
+    return beats_matrix, labels, rr_features
