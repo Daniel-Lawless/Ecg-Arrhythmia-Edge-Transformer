@@ -21,6 +21,16 @@ class ECGDataset(Dataset):
         # Load the data from which ever split is chosen
         self.X = np.load(split_path / "X.npy")
         self.y = np.load(split_path / "y.npy")
+        self.rr_features = np.load(split_path / "rr_features.npy")
+
+        if (
+            self.X.shape[0] != self.y.shape[0]
+            or self.y.shape[0] != self.rr_features.shape[0]
+        ):
+            raise ValueError(
+                f"Shape mismatch: X={self.X.shape[0]}, y={self.y.shape[0]}, "
+                f"rr_features={self.rr_features.shape[0]}"
+            )
 
         # Convert labels to its corresponding integer value
         self.y_indices = np.array([LABEL_TO_INDEX[label] for label in self.y])
@@ -32,9 +42,13 @@ class ECGDataset(Dataset):
     # tell PyTorch how to fetch one sample
     # This is meant to return one sample only without the batch dimension
     # DataLoader adds the batch dimension later.
-    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
-        # x_tensor shape would be (240,), y_tensor would be a scalar tensor: shape ()
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        # x_tensor shape would be (240,), rr_tensor would be (2,),
+        # y_tensor would be a scalar tensor: shape ()
         x_tensor = torch.tensor(self.X[index], dtype=torch.float32)
+        rr_tensor = torch.tensor(self.rr_features[index], dtype=torch.float32)
         y_tensor = torch.tensor(self.y_indices[index], dtype=torch.long)
 
         # conv1d expects x_tensor shape (channels, sequence length).
@@ -42,10 +56,10 @@ class ECGDataset(Dataset):
         # Shape is now (1, 240)
         x_tensor = x_tensor.unsqueeze(0)
 
-        return x_tensor, y_tensor
+        return x_tensor, rr_tensor, y_tensor
 
 
 # Similar to PyTorch models, this is the standard pattern for creating PyTorch datasets.
 # __init__(): load and store the data.
 # __len__(): tell PyTorch how many samples are in the dataset.
-# __getitem__(): return one sample and its label.
+# __getitem__(): return one ECG window, its RR features, and its label.
