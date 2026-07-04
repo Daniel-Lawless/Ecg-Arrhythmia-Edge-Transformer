@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from ecg_arrhythmia.data.ecg_dataset import LABEL_TO_INDEX, ECGDataset
 from ecg_arrhythmia.models.cnn_baseline_v1 import CNNBaselineV1
 from ecg_arrhythmia.models.cnn_baseline_v2 import CNNBaselineV2
+from ecg_arrhythmia.models.cnn_baseline_v2_rr import CNNBaselineV2RR
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,7 @@ def evaluate(
     split_loader: DataLoader,
     criterion: nn.Module,
     device: torch.device,
+    use_rr_features: bool = False,
 ) -> EvaluationMetrics:
 
     model.eval()
@@ -165,13 +167,15 @@ def evaluate(
     all_predicted_tensors: list[torch.Tensor] = []
 
     with torch.no_grad():
-        for X_batch, y_batch in split_loader:
-            # Move batches to device
+        for X_batch, rr_batch, y_batch in split_loader:
             X_batch = X_batch.to(device)
+            rr_batch = rr_batch.to(device)
             y_batch = y_batch.to(device)
 
-            # Calculate raw logits
-            logits = model(X_batch)
+            if use_rr_features:
+                logits = model(X_batch, rr_batch)
+            else:
+                logits = model(X_batch)
 
             # Calculate loss and predictions
             loss = criterion(logits, y_batch)
@@ -256,6 +260,7 @@ def train_one_epoch(
     criterion: nn.Module,
     optimiser: torch.optim.Optimizer,
     device: torch.device,
+    use_rr_features: bool = False,
 ) -> float:
 
     # Put the model in train mode
@@ -266,17 +271,21 @@ def train_one_epoch(
     total_samples = 0
 
     # For each batch in train loader
-    for X_batch, y_batch in train_loader:
-        # Put the x and y datapoints in
+    for X_batch, rr_batch, y_batch in train_loader:
+        # Put the x, y, rr datapoints in
         # the current batch on device
         X_batch = X_batch.to(device)
+        rr_batch = rr_batch.to(device)
         y_batch = y_batch.to(device)
 
         # clear previous gradients
         optimiser.zero_grad()
 
-        # Pass the X_batch through the model
-        logits = model(X_batch)
+        # Calculate raw logits
+        if use_rr_features:
+            logits = model(X_batch, rr_batch)
+        else:
+            logits = model(X_batch)
 
         # Calculate the loss. Returns the average loss
         # for that batch
@@ -317,6 +326,8 @@ def build_model(
             num_classes=num_classes,
             dropout=dropout,
         )
+    if model_name == "cnn_baseline_v2_rr":
+        return CNNBaselineV2RR(num_classes=num_classes, dropout=dropout)
 
     raise ValueError(f"Unknown model name: {model_name}")
 
@@ -348,7 +359,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-name",
         type=str,
-        choices=["cnn_baseline_v1", "cnn_baseline_v2"],
+        choices=["cnn_baseline_v1", "cnn_baseline_v2", "cnn_baseline_v2_rr"],
         default="cnn_baseline_v2",  # Defaults to better model
         help="Which CNN model architecture to train.",
     )
@@ -362,6 +373,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Where to save the best model checkpoint.",
+    )
+
+    parser.add_argument(
+        "--use-rr-features",
+        action="store_true",
+        help="Allow training using rr features",
     )
 
     return parser.parse_args()
@@ -379,6 +396,19 @@ def main() -> None:
     logger.info("Building parser...")
 
     args = parse_args()
+
+    # We need to ensure that is use_rr_features is selected, we are using
+    # cnn_baselinse_v2_rr
+    if args.model_name == "cnn_baseline_v2_rr" and not args.use_rr_features:
+        raise ValueError(
+            "cnn_baseline_v2_rr requires --use-rr-features because it expects "
+            "both ECG windows and RR features."
+        )
+
+    if args.model_name != "cnn_baseline_v2_rr" and args.use_rr_features:
+        raise ValueError(
+            "--use-rr-features can only be used with model-name cnn_baseline_v2_rr."
+        )
 
     logger.info("Parser built")
 
@@ -462,10 +492,15 @@ def main() -> None:
             criterion=criterion,
             optimiser=optimiser,
             device=device,
+            use_rr_features=args.use_rr_features,
         )
 
         val_metrics = evaluate(
-            model=model, split_loader=val_loader, criterion=criterion, device=device
+            model=model,
+            split_loader=val_loader,
+            criterion=criterion,
+            device=device,
+            use_rr_features=args.use_rr_features,
         )
 
         macro_f1 = val_metrics["macro_f1"]

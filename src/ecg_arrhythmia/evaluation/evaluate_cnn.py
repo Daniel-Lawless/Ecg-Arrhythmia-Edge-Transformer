@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from ecg_arrhythmia.data.ecg_dataset import ECGDataset
 from ecg_arrhythmia.models.cnn_baseline_v1 import CNNBaselineV1
 from ecg_arrhythmia.models.cnn_baseline_v2 import CNNBaselineV2
+from ecg_arrhythmia.models.cnn_baseline_v2_rr import CNNBaselineV2RR
 from ecg_arrhythmia.training.cnn_training import (
     INDEX_TO_LABEL,
     NUM_CLASSES,
@@ -53,6 +54,16 @@ def load_model(
         state_dict = torch.load(checkpoint_path, map_location=device)
 
         # Load weights into model
+        model.load_state_dict(state_dict)
+
+    elif model_name == "cnn_baseline_v2_rr":
+        # Select the RR model
+        model = CNNBaselineV2RR(num_classes=NUM_CLASSES).to(device)
+
+        # Load its weights
+        state_dict = torch.load(checkpoint_path, map_location=device)
+
+        # Loads its weights into the model skeleton
         model.load_state_dict(state_dict)
 
     else:
@@ -112,7 +123,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-name",
         type=str,
-        choices=["cnn_baseline_v1", "cnn_baseline_v2"],
+        choices=["cnn_baseline_v1", "cnn_baseline_v2", "cnn_baseline_v2_rr"],
         default="cnn_baseline_v2",
     )
     parser.add_argument(
@@ -142,6 +153,12 @@ def parse_args() -> argparse.Namespace:
         help="Where to save evaluation metrics.",
     )
 
+    parser.add_argument(
+        "--use-rr-features",
+        action="store_true",
+        help="Evaluate using RR features.",
+    )
+
     return parser.parse_args()
 
 
@@ -156,6 +173,18 @@ def main() -> None:
 
     # Extract the command line arguments
     args = parse_args()
+
+    # Cannot have rr features on and not use the rr CNN
+    if args.model_name == "cnn_baseline_v2_rr" and not args.use_rr_features:
+        raise ValueError(
+            "cnn_baseline_v2_rr requires --use-rr-features because it expects "
+            "both ECG windows and RR features."
+        )
+
+    if args.model_name != "cnn_baseline_v2_rr" and args.use_rr_features:
+        raise ValueError(
+            "--use-rr-features can only be used with model-name cnn_baseline_v2_rr."
+        )
 
     # Extract device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -198,6 +227,7 @@ def main() -> None:
         split_loader=test_loader,
         criterion=criterion,
         device=device,
+        use_rr_features=args.use_rr_features,
     )
 
     logger.info(
