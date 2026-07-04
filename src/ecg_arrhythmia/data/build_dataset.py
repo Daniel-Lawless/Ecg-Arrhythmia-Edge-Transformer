@@ -60,13 +60,15 @@ def build_dataset(
     excluded_records: set[str] | None = None,
     excluded_labels: set[str] | None = None,
     normalise_beats: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[RecordSegment]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[RecordSegment]]:
     """
     Build a beat-level ECG dataset from MIT-BIH records.
 
     Saves:
     - X.npy: all extracted ECG beat windows
     - y.npy: all corresponding beat labels
+    - patient_ids.npy: patient ID for each beat
+    - rr_features.npy: RR timing features for each beat
     - record_segments.json: metadata showing which rows belong to each record
 
     Optional exclusions:
@@ -83,12 +85,13 @@ def build_dataset(
     if excluded_records is None:
         excluded_records = set()
 
-    all_beats = []
-    all_labels = []
-    record_segments = []
+    all_beats: list[np.ndarray] = []
+    all_labels: list[np.ndarray] = []
+    record_segments: list[RecordSegment] = []
+    all_rr_features: list[np.ndarray] = []
 
     # We can use these for patient-wise splitting later
-    all_patient_ids = []
+    all_patient_ids: list[str] = []
 
     current_start_index = 0
 
@@ -113,7 +116,7 @@ def build_dataset(
             raise ValueError(f"Record {record_name} contains no annotation symbols")
 
         # Extract beats and labels for this record.
-        beats_matrix, labels = extract_beats(
+        beats_matrix, labels, rr_features = extract_beats(
             signal=signal,
             annotation_samples=annotation.sample,
             annotation_symbols=annotation.symbol,
@@ -143,9 +146,10 @@ def build_dataset(
                     sorted(excluded_labels),
                 )
 
-            # Keep only the labels and beats where keep_mask is True.
+            # Keep only the labels, beats, and rr features where keep_mask is True.
             labels = labels[keep_mask]
             beats_matrix = beats_matrix[keep_mask]
+            rr_features = rr_features[keep_mask]
 
         if beats_matrix.shape[0] == 0:
             logger.warning("No beats extracted for record %s", record_name)
@@ -172,9 +176,10 @@ def build_dataset(
             }
         )
 
-        # Append this records beats and labels.
+        # Append this records beats, labels, rr_intervals, and patient_ids.
         all_beats.append(beats_matrix)
         all_labels.append(labels)
+        all_rr_features.append(rr_features)
         all_patient_ids.extend([patient_id] * number_of_beats)
 
         current_start_index = end_index
@@ -192,21 +197,25 @@ def build_dataset(
     # X is all record matrices stacked
     X_data = np.vstack(all_beats)
 
+    # Stacks the rr_features for each record on top each other
+    rr_features = np.vstack(all_rr_features)
+
     # Concatenates each label np.array into 1 long np.array
     # i.e., labels = [np.array(["V", "N", "Q"]), np.array(["N", "N", "L"])]
     # all_labels = np.concat(labels) = ['V' 'N' 'Q' 'N' 'N' 'L']
     y_labels = np.concatenate(all_labels)
 
-    # Turns our patient_ids list into type np.ndarray
+    # Turns our patient_ids and rr_features list into type np.ndarray
     patient_ids = np.array(all_patient_ids)
 
     if (
         X_data.shape[0] != y_labels.shape[0]
         or y_labels.shape[0] != patient_ids.shape[0]
+        or patient_ids.shape[0] != rr_features.shape[0]
     ):
         raise ValueError(
             f"Shape mismatch: X={X_data.shape[0]}, y={y_labels.shape[0]}, "
-            f"patient_ids={patient_ids.shape[0]}"
+            f"patient_ids={patient_ids.shape[0]}, rr_features={rr_features.shape[0]}"
         )
 
     # Make the directory
@@ -216,12 +225,14 @@ def build_dataset(
     X_path = output_dir / "X.npy"
     y_path = output_dir / "y.npy"
     patient_id_path = output_dir / "patient_ids.npy"
+    rr_features_path = output_dir / "rr_features.npy"
     metadata_path = output_dir / "record_segments.json"
 
     # Save X, y data, and patient_ids
     np.save(file=X_path, arr=X_data)
     np.save(file=y_path, arr=y_labels)
     np.save(file=patient_id_path, arr=patient_ids)
+    np.save(file=rr_features_path, arr=rr_features)
 
     # Write each dictionary into metadata_path
     with metadata_path.open("w", encoding="utf8") as file:
@@ -232,9 +243,14 @@ def build_dataset(
     logger.info(
         "Saved patient IDs with shape %s to file %s", patient_ids.shape, patient_id_path
     )
+    logger.info(
+        "Saved rr_features.npy with shape %s to file %s",
+        rr_features.shape,
+        rr_features_path,
+    )
     logger.info("Saved to file %s with %s records", metadata_path, len(record_segments))
 
-    return X_data, y_labels, patient_ids, record_segments
+    return X_data, y_labels, patient_ids, rr_features, record_segments
 
 
 # CLI

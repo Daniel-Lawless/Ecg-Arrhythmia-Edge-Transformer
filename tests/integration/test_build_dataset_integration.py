@@ -9,7 +9,7 @@ from ecg_arrhythmia.data.build_dataset import build_dataset
 
 @pytest.mark.integration
 def test_build_dataset_with_real_mitdb_records(tmp_path):
-    X, y, patient_ids, record_segments = build_dataset(
+    X, y, patient_ids, rr_features, record_segments = build_dataset(
         record_names=["100", "101"],
         output_dir=Path(tmp_path),
     )
@@ -24,9 +24,18 @@ def test_build_dataset_with_real_mitdb_records(tmp_path):
     # corresponding label
     assert y.shape == (X.shape[0],)
 
-    # Each window, X.sha[0], should have a
+    # Each window, X.shape[0], should have a
     # corresponding patient_id
     assert patient_ids.shape == (X.shape[0],)
+
+    # Each window, X.shape[0], should have a
+    # corresponding RR feature row.
+    assert rr_features.shape == (X.shape[0], 2)
+
+    # RR intervals and ratios should be finite positive values.
+    assert np.all(np.isfinite(rr_features))
+    assert np.all(rr_features[:, 0] > 0)
+    assert np.all(rr_features[:, 1] > 0)
 
     # We input 2 records, so we should get the metadata
     # for 2 records.
@@ -71,13 +80,15 @@ def test_build_dataset_with_real_mitdb_records(tmp_path):
     # These files should be created
     assert (tmp_path / "X.npy").exists()
     assert (tmp_path / "y.npy").exists()
-    assert (tmp_path / "patient_ids.npy").exists
+    assert (tmp_path / "patient_ids.npy").exists()
+    assert (tmp_path / "rr_features.npy").exists()
     assert (tmp_path / "record_segments.json").exists()
 
     # Load these arrays
     saved_X = np.load(tmp_path / "X.npy")
     saved_y = np.load(tmp_path / "y.npy")
     saved_patient_ids = np.load(tmp_path / "patient_ids.npy")
+    saved_rr_features = np.load(tmp_path / "rr_features.npy")
 
     # And load the meta data
     with open(tmp_path / "record_segments.json", encoding="utf-8") as file:
@@ -87,4 +98,5 @@ def test_build_dataset_with_real_mitdb_records(tmp_path):
     assert np.array_equal(saved_X, X)
     assert np.array_equal(saved_y, y)
     assert np.array_equal(saved_patient_ids, patient_ids)
+    assert np.array_equal(saved_rr_features, rr_features)
     assert saved_segments == record_segments
