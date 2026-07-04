@@ -18,13 +18,9 @@ def load_dataset(
 
     # Check if the files exist
     if not X_set_path.exists():
-        raise FileNotFoundError(
-            f"No file at {X_set_path}", "No X data has been saved"
-        )
+        raise FileNotFoundError(f"No file at {X_set_path}", "No X data has been saved")
     if not y_set_path.exists():
-        raise FileNotFoundError(
-            f"No file at {y_set_path}", "No y data has been saved"
-        )
+        raise FileNotFoundError(f"No file at {y_set_path}", "No y data has been saved")
     if not rr_features_path.exists():
         raise FileNotFoundError(
             f"No file at {rr_features_path}", "No rr_features saved"
@@ -57,7 +53,7 @@ def validate_dataset(
     rr_features: np.ndarray,
     record_metadata: list[dict[str, Any]],
 ) -> None:
-    
+
     if X.shape[0] != y.shape[0]:
         raise ValueError(
             f"X and y counts row counts do not match. {X.shape[0]} != {y.shape[0]} "
@@ -78,13 +74,9 @@ def validate_dataset(
             f"Found {rr_features.shape[0]} rr feature rows and {X.shape[0]} beats"
         )
     if not np.all(np.isfinite(rr_features)):
-        raise ValueError(
-            "rr_features must only contain finite values"
-        )
+        raise ValueError("rr_features must only contain finite values")
     if np.any(rr_features <= 0):
-        raise ValueError(
-            "rr_features should contain positive RR intervals and ratios"
-        )
+        raise ValueError("rr_features should contain positive RR intervals and ratios")
 
     # First records starting position
     expected_start_index = 0
