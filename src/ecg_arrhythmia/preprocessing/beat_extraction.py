@@ -20,7 +20,12 @@ WINDOW_SIZE = SAMPLES_BEFORE + SAMPLES_AFTER
 # How many amplitudes values are counted a second
 SAMPLING_RATE = 360
 
+# RR config
 LOCAL_RR_WINDOW = 10
+MIN_RR_SECONDS = 0.25
+MAX_RR_SECONDS = 3.0
+MIN_RR_RATIO = 0.25
+MAX_RR_RATIO = 4.0
 
 
 # Extract beats and labels for a given signal.
@@ -60,6 +65,10 @@ def extract_beats(
         # Calculate time between each beat
         rr_samples = sample_index - previous_heartbeat_sample
         prev_rr_seconds = rr_samples / SAMPLING_RATE
+        # Keeps interval values between these values. Helps combat outliers
+        prev_rr_seconds = float(
+            np.clip(prev_rr_seconds, MIN_RR_SECONDS, MAX_RR_SECONDS)
+        )
 
         previous_heartbeat_sample = sample_index
 
@@ -91,6 +100,7 @@ def extract_beats(
         # This is useful for S beats because they can look similar to normal beats,
         # but are often premature, so timing can help distinguish them from N.
         rr_ratio = prev_rr_seconds / (local_mean_rr + 1e-8)
+        rr_ratio = float(np.clip(rr_ratio, MIN_RR_RATIO, MAX_RR_RATIO))
 
         # Append window and corresponding symbol.
         extracted_beats.append(beat)

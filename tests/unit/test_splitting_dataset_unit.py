@@ -19,7 +19,6 @@ VAL_RATIO = 0.2
 TEST_RATIO = 0.2
 N_TRIALS = 100
 
-
 # ---------------------------------------------------------------------------
 # Test fixtures
 # ---------------------------------------------------------------------------
@@ -29,9 +28,13 @@ N_TRIALS = 100
 def small_dataset():
     """Create a tiny dataset with five patients and four classes."""
 
-    # Creats numbers between 0 to 99 and makes is a 2d numpy array with 20 rows
+    # Creates numbers between 0 to 99 and makes is a 2d numpy array with 20 rows
     # and 5 columns
     X = np.arange(20 * 5).reshape(20, 5)
+
+    # Creates fake RR features with 20 rows and 2 columns.
+    # Each row corresponds to the same row in X, y, and patient_ids.
+    rr_features = np.arange(20 * 2).reshape(20, 2).astype(np.float32)
 
     # fmt: off
     y = np.array(
@@ -49,31 +52,31 @@ def small_dataset():
             "102", "102", "102", "102",
             "103", "103", "103", "103",
             "104", "104", "104", "104",
-            "105","105", "105", "105",
+            "105", "105", "105", "105",
         ]
     )
     # fmt: on
 
-    return X, y, patient_ids
+    return X, y, patient_ids, rr_features
 
 
 # fixture is built into pytest and is marks reusable setup code for tests
 @pytest.fixture
 def small_splits(small_dataset):
     """Create reusable train/val/test splits from the tiny dataset."""
-    X, y, patient_ids = small_dataset
+    X, y, patient_ids, rr_features = small_dataset
 
     return create_patient_splits(
         X=X,
         y=y,
         patient_ids=patient_ids,
+        rr_features=rr_features,
         train_ratio=TRAIN_RATIO,
         val_ratio=VAL_RATIO,
         test_ratio=TEST_RATIO,
         seed=SEED,
         n_trials=N_TRIALS,
     )
-
 
 # ---------------------------------------------------------------------------
 # Ratio validation tests
@@ -267,23 +270,24 @@ def test_indices_for_patients_returns_empty_array_when_no_patients_match():
 
 
 def test_create_patient_splits_rejects_mismatched_lengths():
-    """X, y, and patient_ids must have the same number of beats."""
+    """X, y, patient_ids, and rr_features must have the same number of beats."""
     X = np.zeros((10, 5))
     y = np.array(["N"] * 9)
     patient_ids = np.array(["101"] * 10)
+    rr_features = np.ones((10, 2))
 
     with pytest.raises(ValueError):
         create_patient_splits(
             X=X,
             y=y,
             patient_ids=patient_ids,
+            rr_features=rr_features,
             train_ratio=0.7,
             val_ratio=0.15,
             test_ratio=0.15,
             seed=SEED,
             n_trials=N_TRIALS,
         )
-
 
 # pytest sees that small_splits is a fixture, goes and run it, and allows
 # us to use its results here. The name of the fixture is the access point.
@@ -312,7 +316,7 @@ def test_create_patient_splits_uses_every_beat_once(small_dataset, small_splits)
     Every beat index should appear exactly once across
     train, validation, and test.
     """
-    X, _, _ = small_dataset
+    X, _, _, _ = small_dataset
 
     # Combines all indices across the splits
     all_indices = np.concatenate(
@@ -335,7 +339,7 @@ def test_create_patient_splits_data_matches_original_indices(
     small_dataset, small_splits
 ):
     """Split arrays should exactly match the original rows selected by split indices."""
-    X, y, patient_ids = small_dataset
+    X, y, patient_ids, rr_features = small_dataset
 
     for split_name in SPLIT_NAMES:
         # Indices for each window in the split
@@ -349,17 +353,22 @@ def test_create_patient_splits_data_matches_original_indices(
             small_splits[split_name]["patient_ids"],
             patient_ids[indices],
         )
+        np.testing.assert_array_equal(
+            small_splits[split_name]["rr_features"],
+            rr_features[indices],
+        )
 
 
 def test_create_patient_splits_is_reproducible_with_same_seed(small_dataset):
     """Using the same seed and trial count should produce the same selected split."""
-    X, y, patient_ids = small_dataset
+    X, y, patient_ids, rr_features = small_dataset
 
     # 2 splits with the same seed
     split_1 = create_patient_splits(
         X=X,
         y=y,
         patient_ids=patient_ids,
+        rr_features=rr_features,
         train_ratio=TRAIN_RATIO,
         val_ratio=VAL_RATIO,
         test_ratio=TEST_RATIO,
@@ -371,6 +380,7 @@ def test_create_patient_splits_is_reproducible_with_same_seed(small_dataset):
         X=X,
         y=y,
         patient_ids=patient_ids,
+        rr_features=rr_features,
         train_ratio=TRAIN_RATIO,
         val_ratio=VAL_RATIO,
         test_ratio=TEST_RATIO,
@@ -423,6 +433,10 @@ def test_save_splits_writes_arrays_indices_and_summary(tmp_path, small_splits):
             np.load(tmp_path / split_name / "patient_ids.npy"),
             small_splits[split_name]["patient_ids"],
         )
+        np.testing.assert_array_equal(
+            np.load(tmp_path / split_name / "rr_features.npy"),
+            small_splits[split_name]["rr_features"],
+        )
 
     loaded_indices = np.load(tmp_path / "split_indices.npz")
 
@@ -464,7 +478,27 @@ def test_save_splits_writes_arrays_indices_and_summary(tmp_path, small_splits):
         assert summary["splits"][split_name]["number_of_beats"] == len(
             small_splits[split_name]["y"]
         )
-        assert (
-            summary["splits"][split_name]["patient_ids"]
-            == small_splits[split_name]["selected_patient_ids"]
-        )
+        assert summary["splits"][split_name]["patient_ids"] == small_splits[
+            split_name
+        ]["selected_patient_ids"]
+
+        # Extract the rr_summary portion
+        rr_summary = summary["splits"][split_name]["rr_features"]
+
+        # Checks its structure is what we expect.
+        assert rr_summary["shape"] == list(small_splits[split_name]["rr_features"].shape)
+        assert rr_summary["num_nan"] == 0
+        assert rr_summary["num_inf"] == 0
+        assert set(rr_summary["feature_stats"].keys()) == {
+            "prev_rr_seconds",
+            "rr_ratio",
+        }
+
+        for feature_name in ["prev_rr_seconds", "rr_ratio"]:
+            assert set(rr_summary["feature_stats"][feature_name].keys()) == {
+                "mean",
+                "std",
+                "min",
+                "median",
+                "max",
+            }

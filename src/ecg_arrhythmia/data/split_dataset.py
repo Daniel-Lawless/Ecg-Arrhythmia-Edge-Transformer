@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class SplitData(TypedDict):
     X: np.ndarray
     y: np.ndarray
+    rr_features: np.ndarray
     patient_ids: np.ndarray
     indices: np.ndarray
     selected_patient_ids: list[str]
@@ -36,6 +37,7 @@ class DatasetSplits(TypedDict):
 # So each set must be a SplitData dict
 
 SPLIT_NAMES = ("train", "val", "test")
+RR_FEATURE_NAMES = ("prev_rr_seconds", "rr_ratio")
 
 
 def _validate_split_ratios(
@@ -174,6 +176,7 @@ def _score_split(
 def create_patient_splits(
     X: np.ndarray,
     y: np.ndarray,
+    rr_features: np.ndarray,
     patient_ids: np.ndarray,
     train_ratio: float,
     val_ratio: float,
@@ -187,10 +190,14 @@ def create_patient_splits(
     """
 
     # Checks that patient_ids, X, and y all have the same number of beats
-    if X.shape[0] != y.shape[0] or y.shape[0] != patient_ids.shape[0]:
+    if (X.shape[0] != y.shape[0] 
+        or (y.shape[0] != patient_ids.shape[0])
+        or rr_features.shape[0] != patient_ids.shape[0]):
         raise ValueError(
-            f"Shape mismatch: X={X.shape[0]}, y={y.shape[0]}, "
-            f"patient_ids={patient_ids.shape[0]}"
+            f"Shape mismatch: X={X.shape[0]},"
+            f"y={y.shape[0]},"
+            f"patient_ids={patient_ids.shape[0]},"
+            f"rr_features={rr_features.shape[0]}"
         )
 
     # Ensures our splits ratios are valid
@@ -269,6 +276,7 @@ def create_patient_splits(
         return {
             "X": X[indices],
             "y": y[indices],
+            "rr_features": rr_features[indices],
             "patient_ids": patient_ids[indices],
             "indices": indices,
             "selected_patient_ids": best_patient_split[name],
@@ -334,6 +342,29 @@ def _split_summary(
         "patient_ids": split["selected_patient_ids"],
         "class_counts": class_summary["class_counts"],
         "class_proportions": class_summary["class_proportions"],
+        "rr_features": _rr_feature_summary(split["rr_features"]),
+    }
+
+# Helpers for returning a summary for rr_features
+def _numeric_summary(values: np.ndarray) -> dict[str, float]:
+    return {
+        "mean": round(float(np.mean(values)), 4),
+        "std": round(float(np.std(values)), 4),
+        "min": round(float(np.min(values)), 4),
+        "median": round(float(np.median(values)), 4),
+        "max": round(float(np.max(values)), 4),
+    }
+
+
+def _rr_feature_summary(rr_features: np.ndarray) -> dict[str, object]:
+    return {
+        "shape": list(rr_features.shape),
+        "num_nan": int(np.isnan(rr_features).sum()),
+        "num_inf": int(np.isinf(rr_features).sum()),
+        "feature_stats": {
+            feature_name: _numeric_summary(rr_features[:, feature_index])
+            for feature_index, feature_name in enumerate(RR_FEATURE_NAMES)
+        },
     }
 
 
@@ -361,6 +392,7 @@ def save_splits(
         # Save the np.ndarray types
         np.save(split_dir / "X.npy", splits[split_name]["X"])
         np.save(split_dir / "y.npy", splits[split_name]["y"])
+        np.save(split_dir / "rr_features.npy", splits[split_name]["rr_features"])
         np.save(split_dir / "patient_ids.npy", splits[split_name]["patient_ids"])
 
     # np.savez saves multiple NumPy arrays into one file.
@@ -375,9 +407,11 @@ def save_splits(
         test_indices=splits["test"]["indices"],
     )
 
-    #
+    # Get all y labels
     all_y = np.concatenate([splits[name]["y"] for name in SPLIT_NAMES])
+    # Get each unique label
     all_labels = np.unique(all_y)
+
     total_beats = len(all_y)
 
     dataset_class_summary = _class_summary(all_y, all_labels)
@@ -419,12 +453,18 @@ def split_processed_dataset(
     logger.info("Loading saved data...")
 
     # Load saved data
-    X, y, patient_ids, record_metadata = load_dataset(index_path=input_dir)
+    X, y, patient_ids, rr_features, record_metadata = load_dataset(index_path=input_dir)
 
     logger.info("Data loaded")
 
     # Validate the data
-    validate_dataset(X, y, patient_ids, record_metadata)
+    validate_dataset(
+        X,
+        y,
+        patient_ids,
+        rr_features,
+        record_metadata
+    )
 
     logger.info("Data validated, splitting data...")
 
@@ -433,6 +473,7 @@ def split_processed_dataset(
         X=X,
         y=y,
         patient_ids=patient_ids,
+        rr_features=rr_features,
         train_ratio=train_ratio,
         val_ratio=val_ratio,
         test_ratio=test_ratio,
