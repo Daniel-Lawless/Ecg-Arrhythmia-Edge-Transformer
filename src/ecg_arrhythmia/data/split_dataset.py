@@ -190,9 +190,11 @@ def create_patient_splits(
     """
 
     # Checks that patient_ids, X, and y all have the same number of beats
-    if (X.shape[0] != y.shape[0] 
+    if (
+        X.shape[0] != y.shape[0]
         or (y.shape[0] != patient_ids.shape[0])
-        or rr_features.shape[0] != patient_ids.shape[0]):
+        or rr_features.shape[0] != patient_ids.shape[0]
+    ):
         raise ValueError(
             f"Shape mismatch: X={X.shape[0]},"
             f"y={y.shape[0]},"
@@ -345,6 +347,7 @@ def _split_summary(
         "rr_features": _rr_feature_summary(split["rr_features"]),
     }
 
+
 # Helpers for returning a summary for rr_features
 def _numeric_summary(values: np.ndarray) -> dict[str, float]:
     return {
@@ -458,13 +461,7 @@ def split_processed_dataset(
     logger.info("Data loaded")
 
     # Validate the data
-    validate_dataset(
-        X,
-        y,
-        patient_ids,
-        rr_features,
-        record_metadata
-    )
+    validate_dataset(X, y, patient_ids, rr_features, record_metadata)
 
     logger.info("Data validated, splitting data...")
 

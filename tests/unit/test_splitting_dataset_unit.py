@@ -78,6 +78,7 @@ def small_splits(small_dataset):
         n_trials=N_TRIALS,
     )
 
+
 # ---------------------------------------------------------------------------
 # Ratio validation tests
 # ---------------------------------------------------------------------------
@@ -289,6 +290,7 @@ def test_create_patient_splits_rejects_mismatched_lengths():
             n_trials=N_TRIALS,
         )
 
+
 # pytest sees that small_splits is a fixture, goes and run it, and allows
 # us to use its results here. The name of the fixture is the access point.
 # I.e., it is equivalent to running it as
@@ -478,15 +480,18 @@ def test_save_splits_writes_arrays_indices_and_summary(tmp_path, small_splits):
         assert summary["splits"][split_name]["number_of_beats"] == len(
             small_splits[split_name]["y"]
         )
-        assert summary["splits"][split_name]["patient_ids"] == small_splits[
-            split_name
-        ]["selected_patient_ids"]
+        assert (
+            summary["splits"][split_name]["patient_ids"]
+            == small_splits[split_name]["selected_patient_ids"]
+        )
 
         # Extract the rr_summary portion
         rr_summary = summary["splits"][split_name]["rr_features"]
 
         # Checks its structure is what we expect.
-        assert rr_summary["shape"] == list(small_splits[split_name]["rr_features"].shape)
+        assert rr_summary["shape"] == list(
+            small_splits[split_name]["rr_features"].shape
+        )
         assert rr_summary["num_nan"] == 0
         assert rr_summary["num_inf"] == 0
         assert set(rr_summary["feature_stats"].keys()) == {
