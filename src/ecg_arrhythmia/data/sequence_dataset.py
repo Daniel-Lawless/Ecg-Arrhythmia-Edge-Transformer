@@ -12,6 +12,7 @@ from ecg_arrhythmia.data.dataset_io import load_dataset, validate_dataset
 
 logger = logging.getLogger(__name__)
 
+
 # Define sequence segment type
 class SequenceSegment(TypedDict):
     record_id: str
@@ -23,8 +24,8 @@ class SequenceSegment(TypedDict):
 
 # We pass in our data, and this makes sequences from them. Here, one X sample will be
 # [beat i-4, beat i-3. beat i-2, beat i-1, beat i] where each beat i is a 240 window.
-# This is called casual since it never since future beats, this is important for real-time
-# inference.
+# This is called casual since it never since future beats, this is important for
+# real-time inference.
 # RR sample: [
 #   RR features for beat i-4,
 #   RR features for beat i-3,
@@ -32,6 +33,7 @@ class SequenceSegment(TypedDict):
 #   RR features for beat i-1,
 #   RR features for beat i]
 # And then the label will be for beat i
+
 
 # sequences must built within each record only, never across records to avoid
 # data leakage.
@@ -81,7 +83,7 @@ def create_record_sequences(
         patient_id = str(record["patient_id"])
         num_record_beats = record_end - record_start
 
-        # If the number of beats in the record is less than 
+        # If the number of beats in the record is less than
         # sequence length, then we cannot make a sequence, so skip it.
         if num_record_beats < sequence_length:
             continue
@@ -93,16 +95,17 @@ def create_record_sequences(
         # Starts creates number 0,1,2,..., num_sequences - 1. These
         # are the starting indicies of each sequence
         starts = np.arange(num_sequences)
-        # offsets tells us how far we go from that start index.  
+        # offsets tells us how far we go from that start index.
         # 0,1,2... sequence_length - 1. So if a sequence starts at 10,
-        # this will include 10+0, 10+1, 10+2, 10+3, 10+4 for seq_len=5   
-        # So it says once I know where the window starts, how many steps forward 
+        # this will include 10+0, 10+1, 10+2, 10+3, 10+4 for seq_len=5
+        # So it says once I know where the window starts, how many steps forward
         # do I need to grab the rest of the beats
         offsets = np.arange(sequence_length)
-        
+
         # Create all sliding-window indices for this record in one vectorised step.
-        # starts[:, np.newaxis] is shaped (num_sequences, 1), offsets[np.newaxis, :] is shaped
-        # (1, sequence_length), so broadcasting gives (num_sequences, sequence_length).
+        # starts[:, np.newaxis] is shaped (num_sequences, 1), offsets[np.newaxis, :] is
+        # shaped (1, sequence_length), so broadcasting gives
+        # (num_sequences, sequence_length).
         window_indices = record_start + starts[:, np.newaxis] + offsets[np.newaxis, :]
 
         # Example with record_start=10, starts=[0, 1, 2], offsets=[0, 1, 2, 3, 4]:
@@ -116,7 +119,7 @@ def create_record_sequences(
         #   [beat_10, beat_11, beat_12, beat_13, beat_14],
         #   [beat_11, beat_12, beat_13, beat_14, beat_15],
         #   [beat_12, beat_13, beat_14, beat_15, beat_16]
-        #   etc... 
+        #   etc...
         # ]
         # Same for the rr_features
         rr_sequences_chunks.append(rr_features[window_indices])
@@ -152,7 +155,7 @@ def create_record_sequences(
     if not X_sequences_chunks:
         raise ValueError("No sequences could be created from the provided records")
 
-    # Concatenate the block arrays along the 0th axis. 
+    # Concatenate the block arrays along the 0th axis.
     # So we get (num_all_sequences, sequence length, channel, beat_window_length)
     return (
         np.concatenate(X_sequences_chunks, axis=0),
@@ -200,7 +203,9 @@ def build_sequence_dataset(
     input_dir: Path = Path("data/processed"),
     output_dir: Path = Path("data/processed_sequences"),
     sequence_length: int = 5,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[SequenceSegment]]:
+) -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[SequenceSegment]
+]:
     # Load our data
     X, y, patient_ids, rr_features, record_metadata = load_dataset(index_path=input_dir)
 
