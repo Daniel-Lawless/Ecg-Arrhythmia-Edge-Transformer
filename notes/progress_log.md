@@ -443,3 +443,41 @@ Current best CNN model:
 
 The next modelling stage should compare this RR-enhanced CNN against the transformer/sequence model, since the transformer should be able to use
 surrounding beat context more naturally.
+
+## Milestone 12 — Causal Beat Sequence Dataset for Transformer Inputs
+
+### Implemented
+
+Added `sequence_dataset.py` to begin the transformer/sequence-modelling stage.
+
+This converts the existing beat-level dataset into causal K-beat sequences. For example, with `sequence_length = 5`, each sample is built as:
+
+```text
+[beat i-4, beat i-3, beat i-2, beat i-1, beat i] -> label for beat i
+```
+
+The sequence builder:
+- creates sliding beat sequences within each ECG record
+- prevents sequences from crossing record boundaries
+- keeps the target label as the label of the final beat in the sequence
+- carries RR features forward for every beat in the sequence
+- saves target indices so each sequence can be traced back to the original beat
+
+The resulting sequence arrays are shaped for later transformer use:
+
+```text
+X_sequences: (num_sequences, sequence_length, 240)
+```
+```text
+rr_features_sequences: (num_sequences, sequence_length, 2)
+```
+```text
+y: (num_sequences,)
+```
+
+## Key Lesson
+The transformer model should not be trained on isolated beats like the CNN baselines. Instead, each sample should contain a short causal history of recent beats.
+
+This casual beat sequence is important because for real-time inference, we will not have access to future beats.
+
+This was created to prepare the project for the next modelling stage of comparing the current best CNN baseline, CNN V2 + RR, against a transformer-style sequence model.
