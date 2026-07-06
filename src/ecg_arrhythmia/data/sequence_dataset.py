@@ -63,7 +63,11 @@ def create_record_sequences(
     if sequence_length <= 0:
         raise ValueError("sequence_length must be greater than 0")
 
+    logger.info("Validating data...")
+
     validate_dataset(X, y, patient_ids, rr_features, record_metadata)
+
+    logger.info("Data validated")
 
     X_sequences_chunks: list[np.ndarray] = []
     y_targets_chunks: list[np.ndarray] = []
@@ -74,6 +78,8 @@ def create_record_sequences(
 
     current_sequence_start = 0
 
+    logger.info("Initalising sequencing...")
+
     # For each record
     for record in record_metadata:
         # Get the start and end of the record
@@ -82,6 +88,8 @@ def create_record_sequences(
         record_id = str(record["record_id"])
         patient_id = str(record["patient_id"])
         num_record_beats = record_end - record_start
+
+        logger.info("Sequencing record %s", record_id)
 
         # If the number of beats in the record is less than
         # sequence length, then we cannot make a sequence, so skip it.
@@ -152,6 +160,8 @@ def create_record_sequences(
             }
         )
 
+    logger.info("Sequencing complete")
+
     if not X_sequences_chunks:
         raise ValueError("No sequences could be created from the provided records")
 
@@ -179,6 +189,8 @@ def save_sequence_dataset(
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    logger.info("Preparing to save data...")
+
     # Define paths
     np.save(output_dir / "X.npy", X_sequences)
     np.save(output_dir / "y.npy", y)
@@ -198,6 +210,8 @@ def save_sequence_dataset(
     with (output_dir / "sequence_segments.json").open("w", encoding="utf8") as file:
         json.dump(metadata, file, indent=4)
 
+    logger.info("Data saved to %s", output_dir)
+
 
 def build_sequence_dataset(
     input_dir: Path = Path("data/processed"),
@@ -206,9 +220,12 @@ def build_sequence_dataset(
 ) -> tuple[
     np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[SequenceSegment]
 ]:
+    logger.info("Loading data...")
+
     # Load our data
     X, y, patient_ids, rr_features, record_metadata = load_dataset(index_path=input_dir)
 
+    logger.info("Data loaded")
     # Extract the sequences from this data
     sequences = create_record_sequences(
         X=X,
@@ -287,3 +304,7 @@ def main() -> None:
         rr_sequences.shape,
         patient_ids.shape,
     )
+
+
+if __name__ == "__main__":
+    main()
