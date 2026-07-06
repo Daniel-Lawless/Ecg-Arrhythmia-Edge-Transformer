@@ -62,7 +62,7 @@ def create_record_sequences(
 
     if sequence_length <= 0:
         raise ValueError("sequence_length must be greater than 0")
-    
+
     logger.info("Validating data...")
 
     validate_dataset(X, y, patient_ids, rr_features, record_metadata)
@@ -159,7 +159,7 @@ def create_record_sequences(
                 "num_sequences": num_sequences,
             }
         )
-    
+
     logger.info("Sequencing complete")
 
     if not X_sequences_chunks:
@@ -209,7 +209,7 @@ def save_sequence_dataset(
     # Write the metadata to a file
     with (output_dir / "sequence_segments.json").open("w", encoding="utf8") as file:
         json.dump(metadata, file, indent=4)
-    
+
     logger.info("Data saved to %s", output_dir)
 
 
@@ -304,6 +304,7 @@ def main() -> None:
         rr_sequences.shape,
         patient_ids.shape,
     )
+
 
 if __name__ == "__main__":
     main()
