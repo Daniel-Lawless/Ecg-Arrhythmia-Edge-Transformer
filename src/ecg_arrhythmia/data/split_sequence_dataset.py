@@ -86,7 +86,10 @@ def validate_sequence_dataset(
         )
 
     if X_sequences.ndim != 3:
-        raise ValueError(f"X_sequences must have shape (num_sequences, K, 240). Found {X_sequences.shape}")
+        raise ValueError(
+            f"X_sequences must have shape (num_sequences, K, 240)."
+            f"Found {X_sequences.shape}"
+        )
 
     if rr_sequences.ndim != 3 or rr_sequences.shape[-1] != 2:
         raise ValueError(
@@ -124,10 +127,18 @@ def _split_summary(
         "true_y_distribution": _y_label_distribution(y_labels),
         "per_split": {
             split_name: {
-                "beat_sequences_shape": list(X_sequences[best_indices[f"{split_name}_indices"]].shape),
-                "rr_sequences_shape": list(rr_sequences[best_indices[f"{split_name}_indices"]].shape),
-                "y_labels_shape": list(y_labels[best_indices[f"{split_name}_indices"]].shape),
-                "num_of_beat_sequences": int(len(best_indices[f"{split_name}_indices"])),
+                "beat_sequences_shape": list(
+                    X_sequences[best_indices[f"{split_name}_indices"]].shape
+                ),
+                "rr_sequences_shape": list(
+                    rr_sequences[best_indices[f"{split_name}_indices"]].shape
+                ),
+                "y_labels_shape": list(
+                    y_labels[best_indices[f"{split_name}_indices"]].shape
+                ),
+                "num_of_beat_sequences": int(
+                    len(best_indices[f"{split_name}_indices"])
+                ),
                 "selected_patient_ids": [
                     str(patient_id)
                     for patient_id in selected_patient_ids[f"{split_name}_patient_ids"]
@@ -151,7 +162,7 @@ def _validate_split_ratios(
     val_ratio: float,
     test_ratio: float,
 ) -> None:
-    
+
     if train_ratio <= 0 or val_ratio <= 0 or test_ratio <= 0:
         raise ValueError("All split ratios must be greater than 0")
 
@@ -168,8 +179,7 @@ def _get_split_patient_ids(
 
     if number_of_patients < 3:
         raise ValueError(
-            "Must have 3 or more patients. "
-            f"Number of patients: {number_of_patients}"
+            f"Must have 3 or more patients. Number of patients: {number_of_patients}"
         )
 
     # Must have at least one ID and 2 spaces left for val and test
@@ -200,8 +210,9 @@ def _build_patient_to_indices(
 
     patient_to_index_chunks: dict[str, list[np.ndarray]] = {}
 
-    # For each sequence segment, store the sequence row indices belonging to that patient.
-    # A patient can have more than one segment, so we collect chunks first and concatenate.
+    # For each sequence segment, store the sequence row indices belonging to
+    # that patient. A patient can have more than one segment, so we collect
+    # chunks first and concatenate.
     for sequence_segment in sequence_segments["sequence_segments"]:
         patient_id = str(sequence_segment["patient_id"])
         start_index = int(sequence_segment["start_index"])
@@ -226,8 +237,7 @@ def _get_indices(
 
     # Get the sequence row indices for every patient in this split.
     index_chunks = [
-        patient_to_indices[str(patient_id)]
-        for patient_id in split_patient_ids
+        patient_to_indices[str(patient_id)] for patient_id in split_patient_ids
     ]
 
     if not index_chunks:
@@ -367,7 +377,8 @@ def split_sequence_dataset(
     y_label_indices = _encode_labels(y_labels)
 
     # Precompute patient-level counts once.
-    # During trials, we score patient groups using these counts instead of slicing large arrays.
+    # During trials, we score patient groups using these counts instead of
+    # slicing large arrays.
     patient_to_num_sequences, patient_to_label_counts = _build_patient_stats(
         patient_to_indices=patient_to_indices,
         y_label_indices=y_label_indices,
@@ -444,7 +455,8 @@ def split_sequence_dataset(
     logger.info("Trial: %s\nSplitting completed", n_trials)
     logger.info("Best split score: %.6f", best_score)
 
-    # Build the actual sequence row indices only once, after the best patient split is known.
+    # Build the actual sequence row indices only once, after the best
+    # patient split is known.
     best_indices = {
         "train_indices": _get_indices(
             split_patient_ids=best_patient_split["train_patient_ids"],
@@ -510,7 +522,9 @@ def save_split_dataset(
         test_indices=best_indices["test_indices"],
     )
 
-    with (output_dir / "split_summary_metrics.json").open("w", encoding="utf-8") as file:
+    with (output_dir / "split_summary_metrics.json").open(
+        "w", encoding="utf-8"
+    ) as file:
         json.dump(fp=file, obj=split_summary_metrics, indent=4)
 
     logger.info("Saved sequence splits to %s", output_dir)
