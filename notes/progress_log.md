@@ -475,9 +475,45 @@ rr_features_sequences: (num_sequences, sequence_length, 2)
 y: (num_sequences,)
 ```
 
-## Key Lesson
+### Key Lesson
 The transformer model should not be trained on isolated beats like the CNN baselines. Instead, each sample should contain a short causal history of recent beats.
 
 This casual beat sequence is important because for real-time inference, we will not have access to future beats.
 
 This was created to prepare the project for the next modelling stage of comparing the current best CNN baseline, CNN V2 + RR, against a transformer-style sequence model.
+
+## Milestone 13 — Patient-Level Splitting for Sequence Dataset
+
+Implemented:
+
+- Added `split_sequence_dataset.py` for splitting the causal beat sequence dataset.
+- Created train, validation, and test splits for transformer-ready sequence data.
+- Kept the split patient-level so no patient appears in more than one split.
+- Loaded and split the sequence dataset arrays:
+  - `X.npy`
+  - `rr_features.npy`
+  - `y.npy`
+  - `patient_ids.npy`
+  - `target_indices.npy`
+- Used `sequence_segments.json` to group sequence rows by patient.
+- Used Monte Carlo sampling to search for a split that approximately preserves:
+  - target train/validation/test ratios
+  - class distribution across splits
+- Saved each split separately under `data/splits_sequences/` with:
+  - `X.npy`
+  - `rr_features.npy`
+  - `y.npy`
+  - `patient_ids.npy`
+  - `target_indices.npy`
+- Saved split metadata to:
+  - `split_indices.npz`
+  - `split_summary_metrics.json`
+- Precomputed patient-level sequence counts and label counts to make the split search much faster.
+
+Key lesson:
+
+- The transformer dataset needs its own split because the samples are now K-beat sequences rather than individual beats.
+- Patient-level splitting is still essential because sequence samples from the same patient could otherwise leak across train, validation, and test sets.
+- The split cannot be perfectly balanced because patients have different numbers of sequences and different arrhythmia distributions.
+- Precomputing patient-level statistics makes Monte Carlo split search much more efficient because each trial can score patients without repeatedly slicing large arrays.
+- This is the final main data preparation step needed before training the transformer model.
