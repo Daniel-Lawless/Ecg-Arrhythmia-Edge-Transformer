@@ -38,6 +38,7 @@ class RRFeatureEncoder(nn.Module):
             )
 
         return self.encoder(rr)
-    
+
+
 # One thing for future reference: nn.Linear cares about the last dimension.
 # Everything before the last dimension is preserved.
