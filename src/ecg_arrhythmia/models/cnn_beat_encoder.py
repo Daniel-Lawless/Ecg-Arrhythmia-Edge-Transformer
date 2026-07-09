@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 
-
 class CNNBeatEncoder(nn.Module):
     """
     CNN encoder for individual ECG beat windows.
