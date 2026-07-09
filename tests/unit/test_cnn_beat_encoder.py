@@ -7,7 +7,7 @@ def test_cnn_beat_encoder_returns_expected_embedding_shape():
     # Create the model
     model = CNNBeatEncoder(embedding_dim=128)
 
-    # Create a fake x with batch_size 10, 
+    # Create a fake x with batch_size 10,
     # 1 ecg channel, and 240 amplitude values
     x = torch.randn(10, 1, 240)
 
