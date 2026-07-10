@@ -20,7 +20,6 @@ class CNNBeatEncoder(nn.Module):
     def __init__(self, embedding_dim: int = 128) -> None:
         super().__init__()
 
-        # input_to_model (Batch_size, num_sequences, ecg_channel, num_amplitues_values)
         self.features = nn.Sequential(
             # input: (batch_size, 1, 240)
             nn.Conv1d(
@@ -80,5 +79,6 @@ class CNNBeatEncoder(nn.Module):
 
         # Project to chosen embedding dimension
         x = self.projection(x)
+        # Shape: (batch_size, embedding_dim)
 
         return x
