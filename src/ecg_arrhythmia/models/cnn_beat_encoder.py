@@ -21,7 +21,6 @@ class CNNBeatEncoder(nn.Module):
         super().__init__()
 
         # input_to_model (Batch_size, num_sequences, ecg_channel, num_amplitues_values)
-        # input_to_model (Batch_size * num_sequences, ecg_channel, num_amplitues_values)
         self.features = nn.Sequential(
             # input: (batch_size, 1, 240)
             nn.Conv1d(
