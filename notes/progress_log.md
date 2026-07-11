@@ -517,3 +517,68 @@ Key lesson:
 - The split cannot be perfectly balanced because patients have different numbers of sequences and different arrhythmia distributions.
 - Precomputing patient-level statistics makes Monte Carlo split search much more efficient because each trial can score patients without repeatedly slicing large arrays.
 - This is the final main data preparation step needed before training the transformer model.
+
+## Milestone 14 — CNN + RR Transformer Model Forward Pass
+
+Implemented:
+
+- Added `CNNBeatEncoder` for encoding individual ECG beat windows.
+- The CNN beat encoder converts each beat from:
+
+```text
+(batch_size, 1, 240)
+```
+
+into a fixed-size morphology embedding:
+
+```text
+(batch_size, 128)
+```
+
+- Added unit tests to confirm the CNN encoder:
+  - returns the expected embedding shape
+  - supports flattened K-beat batches shaped as `(batch_size * sequence_length, 1, 240)`
+
+- Added `RRFeatureEncoder` for encoding RR timing features.
+- The RR encoder converts RR features from:
+
+```text
+(batch_size, sequence_length, 2)
+```
+
+into RR embeddings:
+
+```text
+(batch_size, sequence_length, 16)
+```
+
+- Confirmed that `nn.Linear` can handle both single-beat RR inputs and K-beat RR sequence inputs because it applies to the final tensor dimension.
+
+- Added `ECGSequenceTransformer`, the first combined sequence model.
+- The model combines:
+  - CNN ECG morphology embeddings
+  - RR timing embeddings
+  - learned positional embeddings
+  - a Transformer encoder
+  - a final classifier
+
+The model forward pass now supports:
+
+```text
+X_seq:  (batch_size, sequence_length, 1, 240)
+RR_seq: (batch_size, sequence_length, 2)
+Output: (batch_size, 4)
+```
+
+- Added unit tests to confirm the transformer:
+  - returns logits with shape `(batch_size, num_classes)`
+  - supports different sequence lengths up to `max_sequence_length`
+  - rejects zero-length sequences
+
+Key lesson:
+
+- The CNN encoder should process each beat independently, while the Transformer handles relationships across the K-beat sequence.
+- Flattening `(batch_size, sequence_length, 1, 240)` into `(batch_size * sequence_length, 1, 240)` lets the same CNN encoder be reused for every beat.
+- an MLP can be used with both sequences and single values since it only takes the last dimension into account. 
+- Concatenating ECG morphology embeddings and RR timing embeddings gives each beat a combined representation before sequence modelling.
+- The Transformer output for the final beat is used for classification because each causal sequence predicts the label of its final beat.
