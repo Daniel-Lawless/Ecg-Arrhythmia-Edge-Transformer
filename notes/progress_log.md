@@ -582,3 +582,103 @@ Key lesson:
 - an MLP can be used with both sequences and single values since it only takes the last dimension into account. 
 - Concatenating ECG morphology embeddings and RR timing embeddings gives each beat a combined representation before sequence modelling.
 - The Transformer output for the final beat is used for classification because each causal sequence predicts the label of its final beat.
+
+## Milestone 15 — Transformer Training, Tuning and Test Evaluation
+
+Implemented:
+
+- Added a dedicated training pipeline for `ECGSequenceTransformer`.
+- Loaded causal sequence data using `ECGSequenceDataset`.
+- Trained the model using:
+  - ECG beat sequences shaped as `(batch_size, sequence_length, 1, 240)`
+  - RR feature sequences shaped as `(batch_size, sequence_length, 2)`
+  - the final beat label as the target
+- Added weighted `CrossEntropyLoss` using class counts from the training sequence split.
+- Used validation macro F1 to select and save the best checkpoint.
+- Used scikit-learn's `classification_report` and `confusion_matrix` for:
+  - accuracy
+  - macro F1
+  - per-class precision
+  - per-class recall
+  - per-class F1
+  - confusion matrix
+- Added early stopping with a patience of 10 epochs.
+- Added a fixed random seed for reproducible experiments.
+- Added configurable training options for:
+  - learning rate
+  - dropout
+  - number of Transformer layers
+  - class-weighting method
+  - random seed
+  - model output path
+
+### Matched Patient Split
+
+Rebuilt the sequence train, validation, and test sets using the same patient assignments as the CNN splits.
+
+This ensured that the final Transformer and CNN comparison used:
+
+- the same training patients
+- the same validation patients
+- the same test patients
+
+The Transformer test set contains 28 fewer targets because a sequence length of 5 requires four previous beats for each record.
+
+### Hyperparameter Experiments
+
+| Experiment | Learning Rate | Dropout | Layers | Class Weighting | Best Validation Macro F1 |
+|:---:|:---:|:---:|:---:|:---:|---:|
+| Baseline | `1e-3` | `0.3` | 2 | inverse | 0.5940 |
+| A | `3e-4` | `0.3` | 2 | inverse | 0.6466 |
+| B | `1e-4` | `0.3` | 2 | inverse | 0.6204 |
+| C | `3e-4` | `0.1` | 2 | inverse | 0.6546 |
+| D | `3e-4` | `0.2` | 2 | inverse | 0.6624 |
+| E | `3e-4` | `0.2` | 1 | inverse | 0.6160 |
+| F | `3e-4` | `0.2` | 3 | inverse | **0.6901** |
+| G | `3e-4` | `0.2` | 4 | inverse | 0.6750 |
+| H | `3e-4` | `0.2` | 3 | square-root inverse | 0.6806 |
+| I | `3e-4` | `0.2` | 3 | capped inverse | 0.6714 |
+
+### Selected Transformer Configuration
+
+The strongest validation configuration was Experiment F:
+
+```text
+Learning rate: 0.0003
+Dropout: 0.2
+Transformer layers: 3
+Class weighting: inverse frequency
+Seed: 42
+Best validation macro F1: 0.6901
+```
+
+### Final Matched Test Results
+
+Saved output:
+
+```text
+artifacts/results/ecg_sequence_transformer_tuned_matched_test_metrics.json
+```
+
+| Metric | Value |
+|:---:|---:|
+| Test loss | 0.4662 |
+| Test accuracy | 0.9496 |
+| Test macro F1 | 0.5340 |
+
+Per-class test F1:
+
+| Class | F1 |
+|:---:|---:|
+| N | 0.9766 |
+| S | 0.2939 |
+| V | 0.8382 |
+| F | 0.0274 |
+
+### Key Lesson
+
+- Validation data should be used for checkpoint selection and hyperparameter tuning.
+- The test set should only be evaluated after the final configuration has been selected.
+- Reducing the learning rate from `1e-3` to `3e-4`, lowering dropout to `0.2`, and increasing the Transformer depth to 3 layers produced the strongest validation result.
+- Sequence context gave much stronger performance for `V` beats and improved `S` compared with the earlier matched Transformer baseline.
+- `F` remains difficult because it has extremely low support and its metrics are highly unstable.
