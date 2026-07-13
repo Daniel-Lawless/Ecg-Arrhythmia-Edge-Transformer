@@ -1,14 +1,14 @@
 import argparse
 import logging
+import random
 from pathlib import Path
 from typing import TypedDict
-import random
 
+import numpy as np
 import torch
 from sklearn.metrics import classification_report, confusion_matrix
 from torch import nn
 from torch.utils.data import DataLoader
-import numpy as np
 
 from ecg_arrhythmia.data.ecg_sequence_dataset import (
     LABEL_TO_INDEX,
@@ -57,8 +57,7 @@ def log_per_class_metrics(evaluation_metrics: EvaluationMetrics) -> None:
     # Log the per-class values returned by sklearn's classification_report.
     for label, class_metrics in evaluation_metrics["per_class"].items():
         logger.info(
-            "%s | precision: %.4f | recall: %.4f | f1: %.4f | "
-            "total_class_count: %s",
+            "%s | precision: %.4f | recall: %.4f | f1: %.4f | total_class_count: %s",
             label,
             class_metrics["precision"],
             class_metrics["recall"],
@@ -126,7 +125,7 @@ def evaluate(
     all_true_labels = torch.cat(all_true_tensors).numpy()
     all_predicted_labels = torch.cat(all_predicted_tensors).numpy()
 
-    # This time unlike in the cnn_training.py file, we can get all the 
+    # This time unlike in the cnn_training.py file, we can get all the
     # metrics calculated using sklearns built in classification_report
     report = classification_report(
         all_true_labels,
@@ -137,7 +136,7 @@ def evaluate(
         zero_division=0,
     )
 
-    # Tells Pylance that report is definitley a dictionary at this point, 
+    # Tells Pylance that report is definitley a dictionary at this point,
     assert isinstance(report, dict)
 
     # Then we can populate the per class metrics using this report.
@@ -171,6 +170,7 @@ def evaluate(
 #                     Helpers For Training
 # ---------------------------------------------------------------------
 
+
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -195,9 +195,7 @@ def compute_class_weights(
     total_samples = class_counts.sum()
 
     # The more rare a class is the larger its weight
-    inverse_weights = total_samples / (
-        NUM_CLASSES * class_counts.clamp_min(1.0)
-    )
+    inverse_weights = total_samples / (NUM_CLASSES * class_counts.clamp_min(1.0))
 
     # Keep it as is
     if weighting_method == "inverse":
@@ -212,9 +210,7 @@ def compute_class_weights(
         class_weights = inverse_weights.clamp(max=max_class_weight)
 
     else:
-        raise ValueError(
-            f"Unknown class weighting method: {weighting_method}"
-        )
+        raise ValueError(f"Unknown class weighting method: {weighting_method}")
 
     logger.info("class counts: %s", class_counts)
     logger.info("class weights: %s", class_weights)
@@ -326,7 +322,8 @@ def parse_args() -> argparse.Namespace:
         "--patience",
         type=int,
         default=10,
-        help="Number of epochs where macro f1 doesn't improve before training is stopped"
+        help="Number of epochs where macro f1 doesn't improve "
+        "before training is stopped",
     )
 
     parser.add_argument(
@@ -437,7 +434,7 @@ def main() -> None:
     model_output_path.parent.mkdir(parents=True, exist_ok=True)
     logger.info("model output path: %s", model_output_path)
 
-    # Use negative infinity so the first completed epoch is always 
+    # Use negative infinity so the first completed epoch is always
     # the initial best checkpoint.
     best_macro_f1 = float("-inf")
 
