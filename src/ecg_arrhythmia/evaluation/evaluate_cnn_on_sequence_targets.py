@@ -309,7 +309,7 @@ def main() -> None:
     # This removes the first four possible beats from each record because
     # those beats do not have enough previous context for a length-5 sequence.
     target_test_set = Subset(
-        cnn_test_set, # Full test datset
+        cnn_test_set,  # Full test datset
         # Contains the row numbers that correspond to the Transformer target beats.
         cnn_local_indices.tolist(),
     )
