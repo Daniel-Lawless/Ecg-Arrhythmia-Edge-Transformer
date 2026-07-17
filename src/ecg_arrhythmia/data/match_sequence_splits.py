@@ -344,8 +344,7 @@ def y_label_distribution(y_labels: np.ndarray) -> dict[str, float]:
     # y_labels == label creates a boolean mask.
     # The mean of that mask is the proportion of samples with that label.
     return {
-        label: np.round(float(np.mean(y_labels == label)), 4)
-        for label in CLASS_LABELS
+        label: np.round(float(np.mean(y_labels == label)), 4) for label in CLASS_LABELS
     }
 
 
