@@ -682,3 +682,56 @@ Per-class test F1:
 - Reducing the learning rate from `1e-3` to `3e-4`, lowering dropout to `0.2`, and increasing the Transformer depth to 3 layers produced the strongest validation result.
 - Sequence context gave much stronger performance for `V` beats and improved `S` compared with the earlier matched Transformer baseline.
 - `F` remains difficult because it has extremely low support and its metrics are highly unstable.
+
+## Milestone 16 — Final Visualisations and ONNX Export
+
+Implemented:
+
+- Added final visualisations for the tuned Transformer and CNN V2 + RR baseline.
+- Plotted the Transformer hyperparameter search and highlighted Experiment F as the best configuration.
+- Added target-matched comparison plots for:
+  - test accuracy
+  - test macro F1
+  - per-class F1
+- Added row-normalised confusion matrices showing both raw counts and percentages.
+- Exported the tuned three-layer Transformer from PyTorch to ONNX.
+- Kept the sequence length fixed at 5 beats while allowing a dynamic batch size.
+
+Saved figures:
+
+```text
+artifacts/figures/transformer_hyperparameter_search.png
+artifacts/figures/cnn_vs_transformer_overall_metrics.png
+artifacts/figures/cnn_vs_transformer_per_class_f1.png
+artifacts/figures/transformer_tuned_confusion_matrix.png
+artifacts/figures/cnn_v2_rr_target_matched_confusion_matrix.png
+```
+
+Final target-matched results:
+
+| Model | Test accuracy | Test macro F1 |
+|:---|---:|---:|
+| CNN V2 + RR | 0.8012 | 0.4112 |
+| Tuned Transformer | 0.9496 | 0.5340 |
+
+Per-class test F1:
+
+| Class | CNN V2 + RR | Tuned Transformer |
+|:---:|---:|---:|
+| N | 0.8935 | 0.9766 |
+| S | 0.2397 | 0.2939 |
+| V | 0.5091 | 0.8382 |
+| F | 0.0023 | 0.0274 |
+
+Saved ONNX model locally:
+
+```text
+artifacts/models/ecg_sequence_transformer.onnx
+```
+
+Key lesson:
+
+- The tuned Transformer clearly outperformed the CNN V2 + RR baseline, especially for class `V`.
+- Target-matched evaluation ensures both models are compared on the same test beats.
+- Confusion matrices reveal class-specific behaviour that overall metrics can hide.
+- ONNX export packages the trained model as a portable computational graph for later inference, parity testing, quantisation and edge deployment.
