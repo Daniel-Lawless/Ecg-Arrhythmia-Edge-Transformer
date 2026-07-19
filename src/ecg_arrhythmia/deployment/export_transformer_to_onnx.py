@@ -122,8 +122,8 @@ def export_model(
 
     Tracing bridges dynamic PyTorch with static ONNX. It uses 
     the dummy data to record a hardcoded map of every mathematical
-    operation in the forward pass. torch.no_grad() doesn't
-    track gradients 
+    operation in the forward pass. torch.no_grad() ensures we don't
+    track gradients during this
     """
     with torch.no_grad():
         onnx_program = torch.onnx.export(
