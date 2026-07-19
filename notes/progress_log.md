@@ -735,3 +735,26 @@ Key lesson:
 - Target-matched evaluation ensures both models are compared on the same test beats.
 - Confusion matrices reveal class-specific behaviour that overall metrics can hide.
 - ONNX export packages the trained model as a portable computational graph for later inference, parity testing, quantisation and edge deployment.
+
+## Milestone 17 — PyTorch–ONNX Parity Verification
+
+Implemented:
+
+- Added a deployment validation script to compare the tuned PyTorch Transformer with its exported ONNX model.
+- Validated that the ONNX graph is structurally correct and exposes the expected ECG, RR and logits nodes.
+- Ran the complete matched test set through both PyTorch and ONNX Runtime using identical inputs.
+- Compared the raw logits using configurable numerical tolerances.
+- Confirmed that both implementations produced matching final class predictions.
+- Added a failure condition when either logit parity or prediction parity is not violated.
+
+Saved output:
+
+```text
+artifacts/results/deployment/pytorch_onnx_parity_summary.json
+```
+
+Key lesson:
+
+- Successfully exporting a model does not guarantee that its behaviour has been preserved.
+- The parity check confirms both models have numerical equivalent logits and agree on the final predictions.
+- The exported ONNX model now provides a validated deployment representation of the tuned PyTorch Transformer.
