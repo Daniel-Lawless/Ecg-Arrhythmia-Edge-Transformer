@@ -62,7 +62,10 @@ def match_r_peaks(
     )
 
     # If tolerance samples is not an int or negative, throw an error
-    if not isinstance(tolerance_samples,(int, np.integer),):
+    if not isinstance(
+        tolerance_samples,
+        (int, np.integer),
+    ):
         raise TypeError("Tolerance must be an integer number of samples.")
 
     if tolerance_samples < 0:
@@ -85,7 +88,6 @@ def match_r_peaks(
         annotation_index < annotation_array.size
         and detection_index < detection_array.size
     ):
-        
         annotation_sample = annotation_array[annotation_index]
         detection_sample = detection_array[detection_index]
 
@@ -115,12 +117,12 @@ def match_r_peaks(
             # the future, this annotation cannot match any of them.
             unmatched_annotation_indices.append(annotation_index)
             annotation_index += 1
- 
+
     # Any annotations left after the detections array has been
     # fully processed, they are unmatched, and hence false negatives.
     unmatched_annotation_indices.extend(range(annotation_index, annotation_array.size))
 
-    # Any detections left after the annotation array has been 
+    # Any detections left after the annotation array has been
     # fully processed, are wrong predictions, and hence false positives.
     unmatched_detection_indices.extend(range(detection_index, detection_array.size))
 
