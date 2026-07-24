@@ -16,7 +16,6 @@ class RPeakDetector(ABC):
     @abstractmethod
     def name(self) -> str:
         """Return the name of the detector."""
-        raise NotImplementedError
 
     def detect(
         self,
@@ -68,7 +67,6 @@ class RPeakDetector(ABC):
         The implementation should return the absolute sample indices
         of the detected R-peaks.
         """
-        raise NotImplementedError
 
     # We use staticmethod when the method does not use information
     # stored in the object, so no self or cls is required.
