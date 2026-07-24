@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
+import numpy as np
 from neurokit2.ecg.ecg_clean import ecg_clean
 from neurokit2.ecg.ecg_peaks import ecg_peaks
-import numpy as np
 from numpy.typing import NDArray
 
 from ecg_arrhythmia.detection.r_peak_detector import RPeakDetector
@@ -34,9 +34,7 @@ class NeuroKitRPeakDetector(RPeakDetector):
     ) -> NDArray[np.int64]:
 
         if not sampling_rate.is_integer():
-            raise ValueError(
-                "NeuroKit2 requires sampling_rate to be a whole number."
-            )
+            raise ValueError("NeuroKit2 requires sampling_rate to be a whole number.")
 
         neurokit_sampling_rate = int(sampling_rate)
 
